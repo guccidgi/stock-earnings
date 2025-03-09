@@ -1,24 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FileChat - Transform the Way You Interact with Your Files
+
+This is a [Next.js](https://nextjs.org) project that allows users to upload, manage, and chat with their files in a seamless, intuitive environment.
+
+## Supabase Integration
+
+This application uses Supabase for authentication and file storage. The app requires the following features:
+
+1. User registration and login with Supabase Auth
+2. Automatic profile creation when a user registers
+3. File upload and management
 
 ## Getting Started
 
-First, run the development server:
+### 1. Set up Supabase
+
+Before running the application, you need to set up your Supabase project:
+
+1. Create a `.env.local` file in the root directory with the following variables:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+2. Run the SQL migration in your Supabase project (available in `supabase/migrations/20250308_create_profiles_table_and_trigger.sql`)
+   - This will create the profiles table and the trigger to automatically create a profile when a user registers
+   - It will also create the user_files table for storing file metadata
+
+3. Set up Supabase Storage
+   - Create a new bucket named `files` with public access
+
+### 2. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a custom font family.
 
 ## Learn More
 
