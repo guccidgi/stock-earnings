@@ -59,7 +59,8 @@ export default function ChatInterface({
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
+        {/* 只有在完全沒有消息且不是加載狀態時才顯示空狀態 */}
+        {messages.length === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
             <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -69,14 +70,16 @@ export default function ChatInterface({
           </div>
         ) : (
           <>
+            {/* 立即渲染所有消息，確保用戶輸入後立即顯示 */}
             {messages.map((message, index) => (
               <div 
                 key={`${message.id || message.session_id}_${index}`}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                data-testid={`message-${index}`}
               >
                 <div 
                   className={`max-w-3/4 p-3 rounded-lg ${message.role === 'user' 
-                    ? 'bg-blue-600 text-black' 
+                    ? 'bg-blue-600 text-white' 
                     : 'bg-white border border-gray-200 text-gray-800'}`}
                 >
                   {message.content}
@@ -106,23 +109,36 @@ export default function ChatInterface({
 
       {/* Input */}
       <div className="p-4 bg-white border-t border-gray-200">
-        <form onSubmit={handleSubmit} className="flex space-x-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
-            placeholder="Type your message..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Send
-          </button>
-        </form>
+        {!sessionId ? (
+          <div className="text-center py-2">
+            <p className="text-gray-500 mb-2">請先點擊「+ 新增會話」後才能發送消息</p>
+            <button
+              type="button"
+              disabled={true}
+              className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
+            >
+              輸入框已禁用
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex space-x-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={isLoading}
+              placeholder="Type your message..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Send
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -10,6 +10,8 @@ export default function FileUpload({ userId, onUploadComplete }: FileUploadProps
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
+
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files || e.target.files.length === 0) {
       return;
@@ -79,6 +81,8 @@ export default function FileUpload({ userId, onUploadComplete }: FileUploadProps
       e.target.value = '';
     }
   }
+
+
 
   return (
     <div className="w-full max-w-xl mx-auto mb-8">

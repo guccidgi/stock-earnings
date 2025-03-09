@@ -266,10 +266,14 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
 
   // 獲取特定會話的消息 
   // 注意：n8n_chat_history 會為每次對話儲存兩筆記錄（用戶訊息和 AI 回覆）
-  const fetchSessionMessages = async (sessionId: string) => {
+  // 新增: 可選參數 preserveMessages 允許保存用戶的最新消息
+  const fetchSessionMessages = async (sessionId: string, preserveMessages: ChatMessage[] = []) => {
     try {
       log('==========================================', 'info');
       log('開始獲取會話記錄', 'info');
+      if (preserveMessages.length > 0) {
+        log(`將保存 ${preserveMessages.length} 條用戶消息`, 'info');
+      }
       log('==========================================', 'info');
       setError(null);
       log(`Fetching messages for session ID: ${sessionId}`, 'info');
@@ -534,7 +538,27 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
                 
                 // 更新發送消息時使用的 sessionId
                 setActiveSessionId(String(mostRecentRecord.id));
-                setMessages(formattedAltMessages);
+                
+                // 如果有需要保留的消息，就將它們添加到替代記錄中的消息中
+                if (preserveMessages.length > 0) {
+                  // 創建一個現有消息的集合來監測重複
+                  const existingMessageContents = new Set(formattedAltMessages.map((msg: ChatMessage) => 
+                    `${msg.content}_${msg.role}`
+                  ));
+                  
+                  // 只保留不重複的消息
+                  const uniquePreservedMessages = preserveMessages.filter(msg => 
+                    !existingMessageContents.has(`${msg.content}_${msg.role}`)
+                  );
+                  
+                  log(`添加 ${uniquePreservedMessages.length} 條不重複的用戶消息到替代記錄`, 'info');
+                  
+                  // 合併消息列表
+                  setMessages([...formattedAltMessages, ...uniquePreservedMessages]);
+                } else {
+                  setMessages(formattedAltMessages);
+                }
+                
                 setIsLoading(false);
                 return;
               }
@@ -544,8 +568,17 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
           }
         }
         
-        log('沒有找到合適的替代記錄，返回空消息列表', 'info');
-        setMessages([]);
+        log('沒有找到合適的替代記錄', 'info');
+        
+        // 如果有需要保留的消息，就使用它不返回空消息列表
+        if (preserveMessages.length > 0) {
+          log(`保留 ${preserveMessages.length} 條用戶消息，不返回空列表`, 'info');
+          setMessages(preserveMessages);
+        } else {
+          log('返回空消息列表', 'info');
+          setMessages([]);
+        }
+        
         setIsLoading(false);
         return;
       }
@@ -592,7 +625,28 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
       });
 
       log(`Formatted messages: ${formattedMessages.length}`, 'info');
-      setMessages(formattedMessages);
+      
+      // 如果有需要保存的消息，就將它們添加到結果中
+      if (preserveMessages.length > 0) {
+        // 創建一個正常消息的集合來監測重複
+        const existingMessageContents = new Set(formattedMessages.map(msg => 
+          `${msg.content}_${msg.role}`
+        ));
+        
+        // 只保留不重複的消息
+        const uniquePreservedMessages = preserveMessages.filter(msg => 
+          !existingMessageContents.has(`${msg.content}_${msg.role}`)
+        );
+        
+        log(`添加 ${uniquePreservedMessages.length} 條不重複的用戶消息`, 'info');
+        
+        // 合併消息列表
+        const combinedMessages = [...formattedMessages, ...uniquePreservedMessages];
+        setMessages(combinedMessages);
+      } else {
+        setMessages(formattedMessages);
+      }
+      
       setIsLoading(false);
     } catch (error: any) {
       log(`Error fetching session messages: ${error.message}`, 'error');
@@ -690,19 +744,11 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
   const sendMessage = async (content: string) => {
     if (!currentUserId || !content.trim() || isLoading) return;
     
-    // 如果沒有活動會話，創建一個新的
-    if (!activeSessionId) {
-      await createNewSession();
-    }
-    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // 使用正確的格式生成 session_id
+      // 生成 session_id，無論是否有活動會話
       const sessionId = activeSessionId || `${Date.now()}_${currentUserId}`;
       
-      // 添加用戶消息到 UI（不等待 API 響應）
+      // 先創建用戶消息對象
       const userMessage: ChatMessage = {
         id: `temp_${Date.now()}`,
         session_id: sessionId,
@@ -711,7 +757,40 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
         created_at: new Date().toISOString(),
       };
       
-      setMessages([...messages, userMessage]);
+      // 如果沒有活動會話，創建一個新的並直接包含用戶消息
+      if (!activeSessionId) {
+        log('沒有活動會話，創建一個新的', 'info');
+        
+        // 在 UI 上立即進行推送創建新會話
+        const newSession: ChatSession = {
+          id: sessionId,
+          name: `New Chat ${new Date().toLocaleDateString()}`,
+          user_id: currentUserId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        // 設置新的會話列表
+        setChatSessions(prev => [newSession, ...prev]);
+        
+        // 設置活動會話 ID
+        setActiveSessionId(sessionId);
+        
+        // 直接設置包含用戶消息的消息列表，而不是先清空
+        log('直接設置包含用戶消息的消息列表', 'info');
+        setMessages([userMessage]);
+      } else {
+        // 如果已經有活動會話，只需添加新消息
+        log('添加用戶消息到界面', 'info');
+        setMessages(prev => [...prev, userMessage]);
+      }
+      
+      // 強制等待一幅 React 渲染周期，確保消息顯示後才設置加載狀態
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // 在確保消息顯示後才設置加載狀態
+      setIsLoading(true);
+      setError(null);
       
       // 發送到 n8n webhook
       log('正在發送消息到 n8n webhook...', 'info');
@@ -872,12 +951,27 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
                   
                   // 如果找到了記錄，就正常刷新
                   log('已找到記錄，正在刷新消息和會話列表...', 'info');
-                  fetchSessionMessages(sessionId);
+                  
+                  // 在刷新消息之前先保存當前的用戶消息對象
+                  const currentMessages = [...messages];
+                  
+                  // 只保存最新的用戶消息，這就是剛剛發送的那一條
+                  const recentUserMessages = currentMessages.filter(msg => 
+                    msg.role === 'user' && msg.id && msg.id.startsWith('temp_')
+                  );
+                  
+                  log(`保存最新發送的用戶消息，數量: ${recentUserMessages.length}`, 'info');
+                  
+                  // 正常獲取数据库消息，但保留用戶已發送的消息
+                  fetchSessionMessages(sessionId, recentUserMessages);
                   fetchChatSessions();
                   setIsLoading(false);
                 } else if (attemptCount.value < maxAttempts) {
                   // 如果沒有找到記錄且還有剩餘嘗試次數，繼續嘗試
                   log(`未找到記錄，${delayBetweenAttempts}ms 後嘗試再次獲取`, 'info');
+                  
+                  // 保留用戶消息，不清空
+                  log('保留用戶消息，不進行清空操作', 'info');
                   setTimeout(checkForMessages, delayBetweenAttempts);
                   return;
                 } else {
@@ -912,12 +1006,18 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
                           return;
                         } else {
                           log('沒有找到用戶的任何記錄', 'info');
+                          log('保留用戶已發送的消息', 'info');
+                          
+                          // 保留用戶消息，只更新會話列表
                           fetchChatSessions();
                           setIsLoading(false);
                         }
                       });
                   } else {
                     log('無法從 session_id 提取用戶 ID', 'info');
+                    log('保留用戶已發送的消息，即使無法提取用戶ID', 'info');
+                    
+                    // 即使無法提取用戶ID，也保留用戶消息，只更新會話列表
                     fetchChatSessions();
                     setIsLoading(false);
                   }

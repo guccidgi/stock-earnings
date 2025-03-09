@@ -11,11 +11,16 @@ export default function FileList({ files, onRefresh }: FileListProps) {
   async function handleDeleteFile(id: string, filePath: string) {
     console.log('Attempting to delete file:', { id, filePath });
     try {
+      // Extract the actual path from the full URL if needed
+      const actualPath = filePath.includes('public/') 
+        ? filePath.split('public/')[1] 
+        : filePath;
+
       // First delete from storage
       console.log('Removing file from storage bucket: files');
       const { data: storageData, error: storageError } = await supabase.storage
         .from('files')
-        .remove([filePath]);
+        .remove([actualPath]);
         
       console.log('Storage delete response:', { success: !storageError, data: storageData });
       if (storageError) {
@@ -46,9 +51,9 @@ export default function FileList({ files, onRefresh }: FileListProps) {
   }
 
   // Format the file size
-  function formatFileSize(sizeStr: string): string {
-    const bytes = parseInt(sizeStr, 10);
-    if (isNaN(bytes)) return '0 B';
+  function formatFileSize(size: number | string): string {
+    const bytes = typeof size === 'string' ? parseInt(size, 10) : size;
+    if (isNaN(bytes) || bytes === 0) return '0 B';
     if (bytes < 1024) return bytes + ' B';
     else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
@@ -63,6 +68,10 @@ export default function FileList({ files, onRefresh }: FileListProps) {
   function getFileUrl(fileUrl: string) {
     console.log('Opening file URL in new tab:', fileUrl);
     try {
+      // Make sure we have a valid URL
+      if (!fileUrl) {
+        throw new Error('File URL is missing');
+      }
       // Since we now store the complete public URL, we can open it directly
       window.open(fileUrl, '_blank');
     } catch (err) {
@@ -114,7 +123,7 @@ export default function FileList({ files, onRefresh }: FileListProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{file.type}</div>
+                    <div className="text-sm text-gray-500">{file.type ? (file.type.includes('/') ? file.type.split('/')[1] : file.type) : 'Unknown'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">{formatFileSize(file.size)}</div>
@@ -130,7 +139,7 @@ export default function FileList({ files, onRefresh }: FileListProps) {
                       View
                     </button>
                     <button
-                      onClick={() => handleDeleteFile(file.id, file.storage_path)}
+                      onClick={() => handleDeleteFile(file.id, file.file_path)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
