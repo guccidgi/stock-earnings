@@ -714,7 +714,7 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
       log('正在發送消息到 n8n webhook...', 'info');
       log(`請求數據: session_id=${sessionId}, question=${content}`, 'info');
       
-      const response = await fetch('https://n8n-guccidgi.zeabur.app/webhook/f8fd19bb-50cb-4d96-ac06-0f4d7b5221a2', {
+      const response = await fetch('https://n8n.guccidgi.com/webhook/f8fd19bb-50cb-4d96-ac06-0f4d7b5221a2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
