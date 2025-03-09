@@ -14,6 +14,7 @@ export interface FileInfo {
 export interface User {
   id: string;
   email: string;
+  role?: string; // 'User' 或 'Admin'
 }
 
 // Chat related types

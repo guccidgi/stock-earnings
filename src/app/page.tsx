@@ -52,7 +52,7 @@ export default function Home() {
     };
   }, []);
 
-  async function checkUser() {
+  async function checkUser(initialRole?: string) {
     try {
       console.log('Checking user authentication status...');
       
@@ -151,10 +151,37 @@ export default function Home() {
         // If we have user data, set the user
         if (userData?.user) {
           console.log('Setting user state with ID:', userData.user.id);
-          setUser({
-            id: userData.user.id,
-            email: userData.user.email || '',
-          });
+          // 如果我們有初始角色，直接使用；否則嘗試從數據庫獲取
+          if (initialRole) {
+            setUser({
+              id: userData.user.id,
+              email: userData.user.email || '',
+              role: initialRole,
+            });
+          } else {
+            // 嘗試從 profiles 表獲取用戶角色
+            try {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', userData.user.id)
+                .single();
+                
+              setUser({
+                id: userData.user.id,
+                email: userData.user.email || '',
+                role: profileData?.role || 'User', // 使用數據庫角色或默認為 User
+              });
+            } catch (err) {
+              console.error('Error fetching user role:', err);
+              // 如果無法獲取角色，則設置默認值
+              setUser({
+                id: userData.user.id,
+                email: userData.user.email || '',
+                role: 'User', // 默認角色
+              });
+            }
+          }
           console.log('Fetching files for user...');
           fetchFiles(userData.user.id);
         } else {
@@ -254,9 +281,10 @@ export default function Home() {
     }
   }
 
-  function handleAuthSuccess() {
-    // Re-check user after successful auth
-    checkUser();
+  function handleAuthSuccess(userRole?: string) {
+    console.log('Authentication successful with role:', userRole);
+    // 重新檢查用戶並設置角色
+    checkUser(userRole);
   }
 
   function handleUploadComplete() {
@@ -297,7 +325,7 @@ export default function Home() {
               
               {!showChat ? (
                 <>
-                  <FileUpload userId={user.id} onUploadComplete={handleUploadComplete} />
+                  <FileUpload userId={user.id} userRole={user.role} onUploadComplete={handleUploadComplete} />
                   
                   {error ? (
                     <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">

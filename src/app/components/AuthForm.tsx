@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase, ensureProfile, recoverSession } from '../supabase';
 
 type AuthFormProps = {
-  onSuccess: () => void;
+  onSuccess: (userRole?: string) => void;
 };
 
 export default function AuthForm({ onSuccess }: AuthFormProps) {
@@ -22,7 +22,8 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
           const { data: userResponse, error: userError } = await supabase.auth.getUser();
           if (!userError && userResponse?.user) {
             console.log('Found existing valid session');
-            onSuccess();
+            // 因為沒有檢查 profile 資訊，使用默認角色
+            onSuccess('User');
           } else if (userError?.message.includes('Invalid Refresh Token')) {
             console.log('Invalid refresh token found, attempting recovery');
             await recoverSession();
@@ -70,7 +71,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
             console.log('Sign up successful, creating profile...');
             // Ensure profile is created
             await ensureProfile(data.user.id, data.user.email || '');
-            onSuccess();
+            onSuccess('User'); // 設置默認角色為 User
           } else {
             console.log('Sign up successful but no user returned', data);
             setError('Account created! Please check your email for verification.');
@@ -114,13 +115,16 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
                 console.log('Profile not found, creating one...');
                 // Create profile if it doesn't exist (should be rare)
                 await ensureProfile(data.user.id, data.user.email || '');
+                onSuccess('User'); // 設置默認角色為 User
+              } else {
+                console.log('User profile found with role:', profile.role);
+                onSuccess(profile.role || 'User'); // 如果有角色就傳入，否則默認為 User
               }
-              
-              onSuccess();
             } catch (profileError: any) {
               console.error('Error checking profile:', profileError);
               // Still allow login even if profile check fails
-              onSuccess();
+              // 因為沒有檢查 profile 資訊，使用默認角色
+              onSuccess('User');
             }
           }
         } catch (signInError: any) {
@@ -150,7 +154,21 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
         const session = await recoverSession();
         if (session) {
           console.log('Session recovered successfully');
-          onSuccess();
+          
+          // 從 recovered session 獲取用戶 ID 並查詢角色
+          try {
+            const userId = session.user.id;
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', userId)
+              .single();
+              
+            onSuccess(profile?.role || 'User');
+          } catch (err) {
+            console.error('Error fetching role after session recovery:', err);
+            onSuccess('User'); // 默認角色
+          }
           return;
         } else {
           errorMessage = 'Your session has expired. Please sign in again.';

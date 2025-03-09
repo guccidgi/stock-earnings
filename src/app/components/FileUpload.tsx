@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 
 type FileUploadProps = {
   userId: string;
+  userRole?: string;
   onUploadComplete: () => void;
 };
 
-export default function FileUpload({ userId, onUploadComplete }: FileUploadProps) {
+export default function FileUpload({ userId, userRole, onUploadComplete }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,8 +20,21 @@ export default function FileUpload({ userId, onUploadComplete }: FileUploadProps
     
     const file = e.target.files[0];
     console.log('File selected for upload:', { name: file.name, size: file.size, type: file.type });
+    console.log('User role for file upload:', userRole);
     setUploading(true);
     setError(null);
+    
+    // 檢查文件大小限制
+    const fileSizeKB = file.size / 1024;
+    console.log('File size in KB:', fileSizeKB);
+    
+    // 如果用戶角色是 User，則限制文件大小為 200KB
+    if (userRole === 'User' && fileSizeKB > 200) {
+      setError('檔案大小超過限制。一般用戶僅能上傳小於 200KB 的檔案。');
+      setUploading(false);
+      e.target.value = '';
+      return;
+    }
     
     try {
       // Check if Supabase is properly initialized
@@ -111,6 +125,11 @@ export default function FileUpload({ userId, onUploadComplete }: FileUploadProps
       <p className="text-sm text-gray-500 text-center mt-2">
         Upload documents, images, and other files to chat with
       </p>
+      {userRole === 'User' && (
+        <p className="text-xs text-orange-500 text-center mt-1">
+          注意：一般用戶僅能上傳小於 200KB 的檔案
+        </p>
+      )}
     </div>
   );
 }
