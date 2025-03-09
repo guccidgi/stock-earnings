@@ -65,21 +65,55 @@ try {
 // Function to handle session recovery on token refresh errors
 export async function recoverSession() {
   try {
+    // 檢查 localStorage 中的 token 存儲狀態
+    if (typeof window !== 'undefined') {
+      const storageKey = 'supabase_auth_token';
+      const storedToken = localStorage.getItem(storageKey);
+      console.log('Stored token exists in localStorage:', !!storedToken);
+      
+      if (storedToken) {
+        try {
+          const parsedToken = JSON.parse(storedToken);
+          console.log('Token structure valid:', !!parsedToken);
+          console.log('Token contains refresh_token:', !!parsedToken?.refresh_token);
+          console.log('Token expiry time:', parsedToken?.expires_at ? new Date(parsedToken.expires_at * 1000).toISOString() : 'Not found');
+        } catch (parseError) {
+          console.error('Error parsing stored token:', parseError);
+        }
+      }
+    }
+
+    console.log('Attempting to recover session...');
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
-      console.warn('Session recovery failed, forcing sign out:', error);
+      console.warn('Session recovery failed with error:', error);
+      console.log('Error message:', error.message);
+      console.log('Error status:', error.status);
+      
+      // 如果是 Refresh Token Not Found 錯誤，嘗試強制登出後重新登入
+      if (error.message?.includes('Refresh Token Not Found')) {
+        console.log('Detected specific "Refresh Token Not Found" error, forcing sign out');
+        await supabase.auth.signOut();
+        return null;
+      }
+      
+      console.log('Forcing sign out due to session error');
       await supabase.auth.signOut();
       return null;
     }
     
     if (data?.session) {
+      console.log('Session recovered successfully with valid session object');
+      console.log('Session expires at:', data.session.expires_at ? new Date(data.session.expires_at * 1000).toISOString() : 'unknown');
       return data.session;
+    } else {
+      console.log('No valid session found during recovery attempt');
     }
     
     return null;
   } catch (e) {
-    console.error('Error during session recovery:', e);
+    console.error('Unexpected error during session recovery:', e);
     return null;
   }
 }
@@ -87,15 +121,29 @@ export async function recoverSession() {
 // Set up auth state change listener to handle refresh token issues
 if (typeof window !== 'undefined') {
   supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth state changed:', event);
+    console.log('Auth state changed:', event, 'Session exists:', !!session);
     
     if (event === 'TOKEN_REFRESHED') {
       console.log('Token refreshed successfully');
+      if (session) {
+        console.log('New token expires at:', session.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'unknown');
+      }
     }
     
     if (event === 'SIGNED_OUT') {
+      console.log('User signed out, clearing local storage data');
       // Clear any cached data or state when signed out
       localStorage.removeItem('user_data');
+      
+      // 檢查 localStorage 中的 token 是否已清除
+      const storageKey = 'supabase_auth_token';
+      const tokenStillExists = localStorage.getItem(storageKey);
+      console.log('Token still exists after sign out:', !!tokenStillExists);
+      
+      if (tokenStillExists) {
+        console.log('Manually removing auth token from localStorage');
+        localStorage.removeItem(storageKey);
+      }
     }
   });
 }

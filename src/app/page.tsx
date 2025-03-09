@@ -54,19 +54,42 @@ export default function Home() {
 
   async function checkUser() {
     try {
+      console.log('Checking user authentication status...');
+      
+      // 檢查 localStorage 中是否有 token
+      if (typeof window !== 'undefined') {
+        const storageKey = 'supabase_auth_token';
+        const hasToken = !!localStorage.getItem(storageKey);
+        console.log('Auth token exists in localStorage:', hasToken);
+      }
+      
       // First check session
+      console.log('Fetching current session from Supabase...');
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        console.error('Session error:', sessionError);
+        console.error('Session error detected:', sessionError);
+        console.log('Session error message:', sessionError.message);
+        console.log('Session error status:', sessionError.status);
         
         if (sessionError.message?.includes('Invalid Refresh Token') || 
-            sessionError.message?.includes('JWT expired')) {
-          console.log('Session token error detected, attempting recovery...');
+            sessionError.message?.includes('JWT expired') ||
+            sessionError.message?.includes('Refresh Token Not Found')) {
+          console.log('Token-related error detected, attempting session recovery...');
+          
+          // 記錄詳細的錯誤信息
+          if (sessionError.message?.includes('Invalid Refresh Token')) {
+            console.log('Error type: Invalid Refresh Token');
+          } else if (sessionError.message?.includes('JWT expired')) {
+            console.log('Error type: JWT expired');
+          } else if (sessionError.message?.includes('Refresh Token Not Found')) {
+            console.log('Error type: Refresh Token Not Found');
+          }
+          
           const recoveredSession = await recoverSession();
           
           if (recoveredSession) {
-            console.log('Session recovered successfully');
+            console.log('Session recovered successfully with user ID:', recoveredSession.user.id);
             setUser({
               id: recoveredSession.user.id,
               email: recoveredSession.user.email || '',
@@ -74,48 +97,90 @@ export default function Home() {
             fetchFiles(recoveredSession.user.id);
             setLoading(false);
             return;
+          } else {
+            console.log('Session recovery failed, user will need to re-authenticate');
           }
         }
+      } else {
+        console.log('Session check completed without errors');
       }
       
       // If we have a session, check the user
       if (sessionData?.session) {
+        console.log('Valid session found, session expires at:', 
+          sessionData.session.expires_at ? new Date(sessionData.session.expires_at * 1000).toISOString() : 'unknown');
+        console.log('Fetching user data with the current session...');
+        
         const { data: userData, error: userError } = await supabase.auth.getUser();
         
         if (userError) {
           console.error('User fetch error:', userError);
+          console.log('User error message:', userError.message);
+          console.log('User error status:', userError.status);
           
-          if (userError.message?.includes('Invalid Refresh Token')) {
-            console.log('Invalid refresh token detected, attempting recovery...');
+          if (userError.message?.includes('Invalid Refresh Token') ||
+              userError.message?.includes('JWT expired') ||
+              userError.message?.includes('Refresh Token Not Found')) {
+            console.log('Token-related error during user fetch, attempting recovery...');
+            
+            // 記錄詳細的錯誤信息
+            if (userError.message?.includes('Invalid Refresh Token')) {
+              console.log('Error type: Invalid Refresh Token');
+            } else if (userError.message?.includes('JWT expired')) {
+              console.log('Error type: JWT expired');
+            } else if (userError.message?.includes('Refresh Token Not Found')) {
+              console.log('Error type: Refresh Token Not Found');
+            }
+            
             const recoveredSession = await recoverSession();
             
             if (!recoveredSession) {
-              console.log('Could not recover session, signing out');
+              console.log('Could not recover session, forcing sign out');
               await supabase.auth.signOut();
               setUser(null);
               setLoading(false);
               return;
+            } else {
+              console.log('Session recovered during user fetch');
             }
           }
+        } else {
+          console.log('User data fetched successfully');
         }
         
         // If we have user data, set the user
         if (userData?.user) {
+          console.log('Setting user state with ID:', userData.user.id);
           setUser({
             id: userData.user.id,
             email: userData.user.email || '',
           });
+          console.log('Fetching files for user...');
           fetchFiles(userData.user.id);
+        } else {
+          console.log('No user data found despite having a session');
         }
       } else {
         // No session found
+        console.log('No valid session found, user is not authenticated');
         setUser(null);
       }
     } catch (error) {
-      console.error('Error checking user:', error);
+      console.error('Unexpected error during user authentication check:', error);
+      console.log('Error details:', error instanceof Error ? error.message : 'Unknown error');
+      console.log('Resetting user state due to error');
       setUser(null);
+      
+      // 嘗試強制登出以確保一致的狀態
+      try {
+        console.log('Forcing sign out after authentication error');
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        console.error('Error during forced sign out:', signOutError);
+      }
     }
     
+    console.log('Authentication check completed, setting loading state to false');
     setLoading(false);
   }
 
@@ -153,14 +218,17 @@ export default function Home() {
         throw error;
       }
       
+      // 在轉換前先檢查資料結構
+      console.log('Raw file data sample:', data && data.length > 0 ? data[0] : 'No files found');
+      
       // Transform the data to match the FileInfo interface
       const transformedFiles: FileInfo[] = (data || []).map(file => ({
         id: file.id,
-        name: file.file_name || '',
+        name: file.name || '',  // 使用正確的欄位名稱
         file_path: file.file_path || '',
-        size: file.file_size !== undefined && file.file_size !== null ? file.file_size.toString() : '0',
-        type: file.file_type || '',
-        storage_path: file.file_path || '', // Assuming storage_path is the same as file_path
+        size: file.size !== undefined && file.size !== null ? file.size.toString() : '0',
+        type: file.type || '',
+        storage_path: file.storage_path || '',
         created_at: file.created_at || '',
         user_id: file.user_id || ''
       }));

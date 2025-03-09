@@ -50,10 +50,10 @@ export default function FileUpload({ userId, onUploadComplete }: FileUploadProps
       console.log('Attempting to insert record into database table: files');
       const fileRecord = {
         user_id: userId,
-        name: file.name,
+        name: file.name,  // 確保使用與資料庫一致的欄位名稱 file_name
         file_path: filePath,
-        size: file.size,
-        type: file.type,
+        size: file.size,  // 確保使用與資料庫一致的欄位名稱 file_size
+        type: file.type,  // 確保使用與資料庫一致的欄位名稱 file_type
         storage_path: publicUrl,
         created_at: new Date().toISOString()
       };

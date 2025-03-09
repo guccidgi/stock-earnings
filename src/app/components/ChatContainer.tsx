@@ -4,12 +4,15 @@ import { ChatSession, ChatMessage, N8nChatHistory } from '../types';
 import ChatSidebar from './ChatSidebar';
 import ChatInterface from './ChatInterface';
 
+import { FileInfo } from '../types';
+
 interface ChatContainerProps {
   userId?: string; // 可選，如果未提供則從 supabase auth 獲取
   initialSessionId?: string; // 可選，初始聊天會話 ID
+  files?: FileInfo[]; // 可選，用戶上傳的檔案列表
 }
 
-export default function ChatContainer({ userId, initialSessionId }: ChatContainerProps) {
+export default function ChatContainer({ userId, initialSessionId, files }: ChatContainerProps) {
   // 用戶相關狀態
   const [currentUserId, setCurrentUserId] = useState<string | null>(userId || null);
   
