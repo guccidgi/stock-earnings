@@ -23,13 +23,16 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
   const [error, setError] = useState<string | null>(null);
 
   // 添加調試日誌狀態
+  const enableLogs = process.env.NEXT_PUBLIC_ENABLE_LOGS === 'true';
   const [logs, setLogs] = useState<{message: string, type: string}[]>([]);
-  const [showLogs, setShowLogs] = useState<boolean>(true);
+  const [showLogs, setShowLogs] = useState<boolean>(false);
 
   // 添加自定義日誌函數
   const log = (message: string, type: 'info' | 'warn' | 'error' = 'info') => {
-    console.log(`[${type}] ${message}`); // 保留控制台輸出
-    setLogs(prev => [...prev, {message, type}].slice(-50)); // 保留最新的50條日誌
+    if (enableLogs) {
+      console.log(`[${type}] ${message}`); // 保留控制台輸出
+      setLogs(prev => [...prev, {message, type}].slice(-50)); // 保留最新的50條日誌
+    }
   };
 
   // 獲取當前用戶 ID
@@ -718,6 +721,7 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': process.env.NEXT_PUBLIC_N8N_AUTH_TOKEN || '',
         },
         body: JSON.stringify({
           session_id: sessionId,
@@ -941,23 +945,25 @@ export default function ChatContainer({ userId, initialSessionId }: ChatContaine
   return (
     <div className="flex flex-col h-full bg-white">
       {/* 調試面板控制 */}
-      <div className="p-1 bg-gray-100 border-b flex justify-between items-center text-xs">
-        <button 
-          onClick={() => setShowLogs(!showLogs)}
-          className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          {showLogs ? '隱藏日誌' : '顯示日誌'}
-        </button>
-        <button 
-          onClick={() => setLogs([])} 
-          className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          清空日誌
-        </button>
-      </div>
+      {enableLogs && (
+        <div className="p-1 bg-gray-100 border-b flex justify-between items-center text-xs">
+          <button 
+            onClick={() => setShowLogs(!showLogs)}
+            className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            {showLogs ? '隱藏日誌' : '顯示日誌'}
+          </button>
+          <button 
+            onClick={() => setLogs([])} 
+            className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            清空日誌
+          </button>
+        </div>
+      )}
       
       {/* 調試日誌顯示區域 */}
-      {showLogs && (
+      {enableLogs && showLogs && (
         <div className="bg-black text-gray-100 p-2 text-xs font-mono overflow-auto" style={{ maxHeight: '200px' }}>
           {logs.length === 0 ? (
             <div className="text-gray-500">無日誌記錄</div>
