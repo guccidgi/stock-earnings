@@ -16,6 +16,7 @@ export default function Home() {
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showChat, setShowChat] = useState<boolean>(false);
+  const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
 
   // Check if user is authenticated
   useEffect(() => {
@@ -295,14 +296,14 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div className="app-container">
       {user ? (
         <>
           <Header 
@@ -313,14 +314,7 @@ export default function Home() {
           />
           
           <div className="container">
-            <div className="mb-6">
-              <div className="welcome-header mb-6">
-                <h2 className="app-subtitle">Transform the Way You <span className="app-subtitle-highlight">Interact</span> with Your Files</h2>
-                <p className="app-description">
-                  Upload, manage, and chat with your files in a seamless, intuitive environment.
-                </p>
-              </div>
-              
+            <div className="content-area">
               {!showChat ? (
                 <>
                   <FileUpload userId={user.id} userRole={user.role} onUploadComplete={handleUploadComplete} />
@@ -330,13 +324,15 @@ export default function Home() {
                       <p>{error}</p>
                       <button 
                         onClick={() => user && fetchFiles(user.id)}
-                        className="btn-link"
+                        className="btn-link danger"
                       >
                         重試
                       </button>
                     </div>
                   ) : (
-                    <FileList files={files} onRefresh={() => user && fetchFiles(user.id)} />
+                    <div className="mt-4">
+                      <FileList files={files} onRefresh={() => user && fetchFiles(user.id)} />
+                    </div>
                   )}
                 </>
               ) : (
@@ -346,32 +342,48 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <div className="landing-container">
+          <header className="landing-header">
+            <h1 className="app-title">FileChat</h1>
+          </header>
+          
           <div className="welcome-container">
-            <div className="welcome-header">
-              <h1 className="app-title">FileChat</h1>
-              <h2 className="app-subtitle">
-                Transform the Way You <span className="app-subtitle-highlight">Interact</span> with Your Files
-              </h2>
-              <p className="app-description">
-                Upload, manage, and chat with your files in a seamless, intuitive environment.
-              </p>
-            </div>
-            
-            <AuthForm onSuccess={handleAuthSuccess} />
+            {!showAuthForm ? (
+              <div className="welcome-content">
+                <h2 className="app-subtitle">
+                  Transform the Way You <span className="app-subtitle-highlight">Interact</span> with Your Files
+                </h2>
+                <p className="app-description">
+                  Upload, manage, and chat with your files in a seamless, intuitive environment.
+                </p>
+                
+                <div className="cta-container">
+                  <button 
+                    className="btn btn-primary btn-large"
+                    onClick={() => setShowAuthForm(true)}
+                  >
+                    Get Started <span>→</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="auth-container">
+                <AuthForm onSuccess={handleAuthSuccess} />
 
-            <div className="learn-more">
-              <a
-                className="learn-more-link"
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  // Add functionality for learning more
-                }}
-              >
-                Learn more about FileChat →
-              </a>
-            </div>
+                <div className="learn-more">
+                  <a
+                    className="learn-more-link"
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Add functionality for learning more
+                    }}
+                  >
+                    Learn more about FileChat →
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
           
           <footer className="app-footer">

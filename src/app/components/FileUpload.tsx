@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Upload, Loader2 } from 'lucide-react';
+import { AlertCircle, Upload, Loader2, FileText, Download, Trash } from 'lucide-react';
 
 type FileUploadProps = {
   userId: string;
@@ -12,8 +12,26 @@ type FileUploadProps = {
 export default function FileUpload({ userId, userRole, onUploadComplete }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<any[]>([]);
 
+  useEffect(() => {
+    fetchUserFiles();
+  }, [userId]);
 
+  async function fetchUserFiles() {
+    try {
+      const { data, error } = await supabase
+        .from('files')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setFiles(data || []);
+    } catch (err: any) {
+      console.error('Error fetching files:', err);
+    }
+  }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files || e.target.files.length === 0) {
@@ -87,6 +105,7 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
       }
       
       console.log('File upload completed successfully');
+      fetchUserFiles(); // 重新获取文件列表
       onUploadComplete();
     } catch (err: any) {
       console.error('File upload failed with error:', err);
@@ -98,56 +117,98 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
     }
   }
 
+  async function handleDeleteFile(fileId: string, filePath: string) {
+    try {
+      // 1. 從存儲中刪除文件
+      const { error: storageError } = await supabase.storage
+        .from('files')
+        .remove([filePath]);
+        
+      if (storageError) throw storageError;
+      
+      // 2. 從數據庫中刪除記錄
+      const { error: dbError } = await supabase
+        .from('files')
+        .delete()
+        .eq('id', fileId);
+        
+      if (dbError) throw dbError;
+      
+      // 3. 更新狀態
+      fetchUserFiles();
+    } catch (err: any) {
+      console.error('Error deleting file:', err);
+      setError(err.message || '刪除檔案時發生錯誤');
+    }
+  }
 
+  async function handleDownloadFile(fileUrl: string, fileName: string) {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      console.error('Error downloading file:', err);
+      setError(err.message || '下載檔案時發生錯誤');
+    }
+  }
+
+  function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  }
 
   return (
-    <div className="w-full max-w-xl mx-auto mb-8">
+    <div className="card">
+      <h2 className="section-title">上傳檔案</h2>
+      
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-destructive mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <p className="text-sm font-medium">{error}</p>
+        <div className="error-message">
+          <AlertCircle className="icon-sm" />
+          <p>{error}</p>
         </div>
       )}
       
-      <label className={cn(
-        "relative flex flex-col items-center justify-center px-4 py-8 rounded-lg",
-        "border-2 border-dashed border-primary/30 bg-background",
-        "hover:bg-accent/20 hover:border-primary/50 transition-colors",
-        "cursor-pointer",
-        uploading && "opacity-70 cursor-not-allowed"
-      )}>
-        <div className="flex flex-col items-center justify-center space-y-2 text-center">
-          {uploading ? (
-            <Loader2 className="h-10 w-10 text-primary animate-spin" />
-          ) : (
-            <Upload className="h-10 w-10 text-primary" />
-          )}
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium text-foreground">
-              {uploading ? '正在上傳...' : '點擊或拖放檔案至此處'}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              支援各類文件格式
-            </p>
+      <div className="upload-container">
+        <label className={`upload-area ${uploading ? 'disabled' : ''}`}>
+          <div className="upload-content">
+            {uploading ? (
+              <Loader2 className="loading-indicator icon-lg" />
+            ) : (
+              <Upload className="icon-lg primary-icon" />
+            )}
+            <div className="upload-text">
+              <p className="upload-title">
+                Upload PDF Files
+              </p>
+              <p className="upload-subtitle">
+                Only PDF files are allowed
+              </p>
+            </div>
           </div>
-        </div>
         <input 
           type='file' 
-          className="hidden" 
+          className="hidden-input" 
           onChange={handleFileUpload} 
+          accept=".pdf"
           disabled={uploading}
         />
       </label>
       
-      <div className="mt-4 space-y-2">
-        <p className="text-sm text-muted-foreground text-center">
-          上傳文件以便與之對話互動
+      {userRole === 'User' && (
+        <p className="note warning text-center">
+          注意：一般用戶僅能上傳小於 200KB 的檔案
         </p>
-        {userRole === 'User' && (
-          <p className="text-xs font-medium text-orange-500 text-center">
-            注意：一般用戶僅能上傳小於 200KB 的檔案
-          </p>
-        )}
+      )}
       </div>
     </div>
   );

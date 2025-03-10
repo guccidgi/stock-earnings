@@ -4,6 +4,8 @@ const { fontFamily } = require("tailwindcss/defaultTheme");
 module.exports = {
   darkMode: ["class"],
   content: [
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
     "./src/**/*.{js,ts,jsx,tsx}",
     "./src/app/components/**/*.{js,ts,jsx,tsx}",
     "./node_modules/@shadcn/**/*.{js,ts,jsx,tsx}", // 添加 shadcn/ui 組件路徑
@@ -66,7 +68,7 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", ...fontFamily.sans],
+        sans: ["Inter", "var(--font-sans)", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {
