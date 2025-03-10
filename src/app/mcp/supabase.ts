@@ -12,10 +12,10 @@ type SqlQueryParams = {
 type McpResponse = {
   data?: {
     details?: {
-      result?: any[];
+      result?: Record<string, unknown>[];
     };
   };
-  error?: any;
+  error?: Error | Record<string, unknown>;
   successful?: boolean;
 };
 

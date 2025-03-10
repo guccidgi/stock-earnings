@@ -84,7 +84,7 @@ export async function recoverSession() {
     }
 
     console.log('Attempting to recover session...');
-    const { data, error } = await supabase.auth.getSession();
+    const { data: _data, error } = await supabase.auth.getSession();
     
     if (error) {
       console.warn('Session recovery failed with error:', error);
@@ -103,10 +103,10 @@ export async function recoverSession() {
       return null;
     }
     
-    if (data?.session) {
+    if (_data?.session) {
       console.log('Session recovered successfully with valid session object');
-      console.log('Session expires at:', data.session.expires_at ? new Date(data.session.expires_at * 1000).toISOString() : 'unknown');
-      return data.session;
+      console.log('Session expires at:', _data.session.expires_at ? new Date(_data.session.expires_at * 1000).toISOString() : 'unknown');
+      return _data.session;
     } else {
       console.log('No valid session found during recovery attempt');
     }
@@ -152,7 +152,7 @@ if (typeof window !== 'undefined') {
 // Export a function to check database schema and health
 export async function checkDatabaseSchema() {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('chat_sessions')
       .select('count')
       .limit(1);

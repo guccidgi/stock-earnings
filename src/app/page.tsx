@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase, recoverSession } from './supabase';
 import { FileInfo, User } from './types';
 import AuthForm from './components/AuthForm';
@@ -18,42 +17,8 @@ export default function Home() {
   const [showChat, setShowChat] = useState<boolean>(false);
   const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
 
-  // Check if user is authenticated
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change event:', event);
-      
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setFiles([]);
-        setLoading(false);
-      } 
-      else if (event === 'TOKEN_REFRESHED') {
-        console.log('Token refreshed successfully');
-        // No need to update user state here as the session is still valid
-      }
-      else if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-        });
-        fetchFiles(session.user.id);
-        setLoading(false);
-      } else {
-        // No session but not explicitly signed out
-        setLoading(false);
-      }
-    });
-
-    // Initial check
-    checkUser();
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  async function checkUser(initialRole?: string) {
+  // 將 checkUser 定義移到 useEffect 之前
+  const checkUser = useCallback(async (initialRole?: string) => {
     try {
       console.log('Checking user authentication status...');
       
@@ -210,7 +175,42 @@ export default function Home() {
     
     console.log('Authentication check completed, setting loading state to false');
     setLoading(false);
-  }
+  }, []); // 空依賴數組
+
+  // 然後是 useEffect
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change event:', event);
+      
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setFiles([]);
+        setLoading(false);
+      } 
+      else if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed successfully');
+        // No need to update user state here as the session is still valid
+      }
+      else if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+        });
+        fetchFiles(session.user.id);
+        setLoading(false);
+      } else {
+        // No session but not explicitly signed out
+        setLoading(false);
+      }
+    });
+
+    // Initial check
+    checkUser();
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [checkUser]);
 
   async function fetchFiles(userId: string) {
     try {
@@ -218,7 +218,7 @@ export default function Home() {
       console.log('Fetching files for user:', userId);
       
       // First check if we're still authenticated before fetching
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { error: userError } = await supabase.auth.getUser();
       if (userError) {
         if (userError.message?.includes('Invalid Refresh Token')) {
           console.log('Token error during file fetch, attempting recovery...');
@@ -262,9 +262,9 @@ export default function Home() {
       }));
       
       setFiles(transformedFiles);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching files:', error);
-      setError(error.message || '獲取文件時發生錯誤');
+      setError(error instanceof Error ? error.message : '獲取文件時發生錯誤');
       setFiles([]);
     }
   }

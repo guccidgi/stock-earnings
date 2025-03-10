@@ -81,9 +81,9 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
             console.log('Sign up successful but no user returned', data);
             setError('Account created! Please check your email for verification.');
           }
-        } catch (signUpError: any) {
+        } catch (signUpError: unknown) {
           console.error('Sign up error details:', signUpError);
-          if (signUpError.message?.includes('fetch') || signUpError.code === 'network_error') {
+          if (signUpError instanceof Error && (signUpError.message?.includes('fetch') || signUpError.code === 'network_error')) {
             throw new Error('Unable to connect to Supabase. Check your network connection and Supabase status at status.supabase.com');
           }
           throw signUpError;
@@ -125,30 +125,30 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
                 console.log('User profile found with role:', profile.role);
                 onSuccess(profile.role || 'User'); // 如果有角色就傳入，否則默認為 User
               }
-            } catch (profileError: any) {
+            } catch (profileError: unknown) {
               console.error('Error checking profile:', profileError);
               // Still allow login even if profile check fails
               // 因為沒有檢查 profile 資訊，使用默認角色
               onSuccess('User');
             }
           }
-        } catch (signInError: any) {
+        } catch (signInError: unknown) {
           console.error('Sign in error details:', signInError);
           
           // Improved error handling for connection issues
-          if (signInError.message?.includes('fetch') || 
+          if (signInError instanceof Error && (signInError.message?.includes('fetch') || 
               signInError.code === 'network_error' || 
-              signInError.message?.includes('NetworkError')) {
+              signInError.message?.includes('NetworkError'))) {
             throw new Error('Connection to Supabase failed. Please verify your network connection and try again in a few moments.');
           }
           throw signInError;
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Authentication error:', err);
       
       // Provide more user-friendly error messages
-      let errorMessage = err.message || 'An error occurred during authentication';
+      let errorMessage = err instanceof Error ? err.message : 'An error occurred during authentication';
       
       // Handle refresh token errors specifically
       if (errorMessage.includes('Invalid Refresh Token') || 

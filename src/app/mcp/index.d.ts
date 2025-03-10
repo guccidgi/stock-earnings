@@ -13,10 +13,10 @@ declare module '../mcp/supabase' {
   export type McpResponse = {
     data?: {
       details?: {
-        result?: any[];
+        result?: unknown[];
       };
     };
-    error?: any;
+    error?: Error | Record<string, unknown> | null;
     successful?: boolean;
   };
 

@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, FileInfo } from '../types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Send, MessageSquare, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -14,8 +12,8 @@ type ChatInterfaceProps = {
   onSendMessage: (content: string) => void;
   isLoading?: boolean;
   selectedFiles?: FileInfo[];
-  error?: string | null;
   sessionId?: string | null;
+  error?: string | null;
 };
 
 export default function ChatInterface({
@@ -23,8 +21,8 @@ export default function ChatInterface({
   onSendMessage,
   isLoading = false,
   selectedFiles = [],
-  error = null,
-  sessionId = null
+  sessionId = null,
+  error
 }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -74,6 +72,12 @@ export default function ChatInterface({
       {/* Messages */}
       <ScrollArea className="message-container">
         <div className="message-list">
+          {/* 錯誤信息顯示 */}
+          {error && (
+            <div className="error-message">
+              <p className="error-text">{error}</p>
+            </div>
+          )}
           {/* 空狀態顯示 */}
           {messages.length === 0 && !isLoading ? (
             <div className="empty-chat">
@@ -183,6 +187,20 @@ export default function ChatInterface({
         .markdown-content {
           font-size: 14px;
           line-height: 1.6;
+        }
+        
+        .error-message {
+          padding: 0.75rem 1rem;
+          margin: 0.5rem 0;
+          background-color: #fee2e2;
+          border: 1px solid #ef4444;
+          border-radius: 0.5rem;
+        }
+        
+        .error-text {
+          color: #dc2626;
+          font-size: 0.875rem;
+          margin: 0;
         }
         
         .markdown-content h1, 

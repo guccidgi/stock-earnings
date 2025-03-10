@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { supabase } from '../supabase';
 import { FileInfo } from '../types';
-import { motion, useMotionValue, useMotionTemplate } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 type FileListProps = {
   files: FileInfo[];

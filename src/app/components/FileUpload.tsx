@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
-import { cn } from '@/lib/utils';
-import { AlertCircle, Upload, Loader2, FileText, Download, Trash } from 'lucide-react';
+import { AlertCircle, Upload, Loader2 } from 'lucide-react';
 
 type FileUploadProps = {
   userId: string;
@@ -9,10 +8,23 @@ type FileUploadProps = {
   onUploadComplete: () => void;
 };
 
+// 處理文件上傳的文件記錄的類型
+type FileRecord = {
+  id?: string; // 可選的，因為在插入新記錄時 ID 由數據庫自動生成
+  user_id: string;
+  name: string;
+  file_path: string;
+  size: number;
+  type: string;
+  storage_path: string;
+  created_at: string;
+};
+
 export default function FileUpload({ userId, userRole, onUploadComplete }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [files, setFiles] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [files, setFiles] = useState<FileRecord[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,7 +103,7 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
       
       // Add file entry to the database
       console.log('Attempting to insert record into database table: files');
-      const fileRecord = {
+      const fileRecord: FileRecord = {
         user_id: userId,
         name: file.name,  // 確保使用與資料庫一致的欄位名稱 file_name
         file_path: filePath,

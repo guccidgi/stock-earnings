@@ -1,15 +1,33 @@
 // Shared types for the application
 
-export interface FileInfo {
+export type ChatMessage = {
+  id?: string;
+  session_id?: string;
+  role: 'user' | 'assistant';
+  content: string;
+  file_reference?: string;
+  created_at?: string;
+};
+
+export type FileInfo = {
   id: string;
   name: string;
-  file_path: string;
-  size: string;
+  size: number;
   type: string;
-  storage_path: string;
+  file: File;
+  file_path?: string;
+  storage_path?: string;
+  created_at?: string;
+  user_id?: string;
+};
+
+export type SessionInfo = {
+  id: string;
+  name: string;
   created_at: string;
-  user_id: string;
-}
+  updated_at: string;
+  files?: FileInfo[];
+};
 
 export interface User {
   id: string;
@@ -28,16 +46,6 @@ export interface ChatSession {
   messages?: ChatMessage[]; // 添加消息陣列屬性
 }
 
-export interface ChatMessage {
-  id: string;
-  session_id: string;
-  content: string;
-  role: 'user' | 'system';
-  created_at: string;
-  file_reference?: string;
-}
-
-// N8n chat history for direct use with existing table
 export interface N8nChatHistory {
   id: string;
   user_id: string;

@@ -1,13 +1,13 @@
 import React from 'react';
-import { ChatSession, ChatMessage } from '../types';
-import { MessageCircle, Plus, Trash2, MoreHorizontal, LogOut } from 'lucide-react';
+import { ChatSession } from '../types';
+import { MessageCircle, Plus, Trash2, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { supabase } from '../supabase';
-import { useRouter } from 'next/navigation';
+
 
 type ChatSidebarProps = {
   sessions: ChatSession[];
@@ -22,7 +22,7 @@ type ChatSidebarProps = {
 const formatDate = (dateString: string) => {
   try {
     return format(new Date(dateString), 'yyyy/MM/dd HH:mm');
-  } catch (error) {
+  } catch {
     return '無效日期';
   }
 };
@@ -50,7 +50,6 @@ export default function ChatSidebar({
   onDeleteSession,
   isLoading
 }: ChatSidebarProps) {
-  const router = useRouter();
   
   // 處理登出功能
   const handleSignOut = async () => {
