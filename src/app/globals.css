@@ -211,8 +211,8 @@ html, body {
 .card {
   background-color: white;
   border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.0rem;
   border: 1px solid #e5e7eb;
   margin-bottom: 1.5rem;
 }
@@ -228,8 +228,8 @@ html, body {
 .upload-container {
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: 1.0rem;
+  margin-bottom: 0.5rem;
 }
 
 .upload-area {

@@ -83,7 +83,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
           }
         } catch (signUpError: unknown) {
           console.error('Sign up error details:', signUpError);
-          if (signUpError instanceof Error && (signUpError.message?.includes('fetch') || signUpError.code === 'network_error')) {
+          if (signUpError instanceof Error && (signUpError.message?.includes('fetch') || ('code' in signUpError && signUpError.code === 'network_error'))) {
             throw new Error('Unable to connect to Supabase. Check your network connection and Supabase status at status.supabase.com');
           }
           throw signUpError;
@@ -137,7 +137,7 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
           
           // Improved error handling for connection issues
           if (signInError instanceof Error && (signInError.message?.includes('fetch') || 
-              signInError.code === 'network_error' || 
+              ('code' in signInError && signInError.code === 'network_error') || 
               signInError.message?.includes('NetworkError'))) {
             throw new Error('Connection to Supabase failed. Please verify your network connection and try again in a few moments.');
           }
