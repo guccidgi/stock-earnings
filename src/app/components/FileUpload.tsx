@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Upload, Loader2, FileText, Download, Trash } from 'lucide-react';
@@ -13,6 +13,8 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<any[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchUserFiles();
@@ -33,12 +35,19 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
     }
   }
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files || e.target.files.length === 0) {
+  // 處理文件上傳，可以接受來自 input 或拖放的文件
+  async function handleFileUpload(file: File) {
+    if (!file) {
       return;
     }
     
-    const file = e.target.files[0];
+    // 檢查文件類型是否為 PDF
+    if (file.type !== 'application/pdf') {
+      setError('只允許上傳 PDF 檔案。');
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
     console.log('File selected for upload:', { name: file.name, size: file.size, type: file.type });
     console.log('User role for file upload:', userRole);
     setUploading(true);
@@ -52,7 +61,7 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
     if (userRole === 'User' && fileSizeKB > 200) {
       setError('檔案大小超過限制。一般用戶僅能上傳小於 200KB 的檔案。');
       setUploading(false);
-      e.target.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
     
@@ -113,7 +122,7 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
     } finally {
       setUploading(false);
       // Reset file input
-      e.target.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
@@ -167,6 +176,37 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
   }
 
+  // 處理文件輸入變更
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
+    }
+    handleFileUpload(e.target.files[0]);
+  };
+
+  // 處理拖放事件
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  };
+
   return (
     <div className="card">
       <h2 className="section-title">上傳檔案</h2>
@@ -179,7 +219,13 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
       )}
       
       <div className="upload-container">
-        <label className={`upload-area ${uploading ? 'disabled' : ''}`}>
+        <div 
+          className={`upload-area ${isDragging ? 'dragging' : ''} ${uploading ? 'disabled' : ''}`}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <div className="upload-content">
             {uploading ? (
               <Loader2 className="loading-indicator icon-lg" />
@@ -188,21 +234,22 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
             )}
             <div className="upload-text">
               <p className="upload-title">
-                Upload PDF Files
+                上傳 PDF 檔案
               </p>
               <p className="upload-subtitle">
-                Only PDF files are allowed
+                {isDragging ? '拖放檔案至此處' : '點擊或拖放檔案至此處'}
               </p>
             </div>
           </div>
+        </div>
         <input 
+          ref={fileInputRef}
           type='file' 
           className="hidden-input" 
-          onChange={handleFileUpload} 
+          onChange={handleInputChange} 
           accept=".pdf"
           disabled={uploading}
         />
-      </label>
       
       {userRole === 'User' && (
         <p className="note warning text-center">
