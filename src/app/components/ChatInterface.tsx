@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Send, MessageSquare, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 type ChatInterfaceProps = {
   messages: ChatMessage[];
@@ -102,7 +103,11 @@ export default function ChatInterface({
                         <div className="avatar-label">AI</div>
                       </div>
                       <div className="message-content">
-                        {message.content}
+                        <div className="markdown-content">
+                          <ReactMarkdown>
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
                         {message.file_reference && (
                           <div className="file-reference">
                             參考文件: {message.file_reference}
@@ -172,6 +177,90 @@ export default function ChatInterface({
           </form>
         )}
       </div>
+
+      {/* Markdown u6a23u5f0f */}
+      <style jsx global>{`
+        .markdown-content {
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        
+        .markdown-content h1, 
+        .markdown-content h2, 
+        .markdown-content h3, 
+        .markdown-content h4 {
+          margin-top: 16px;
+          margin-bottom: 8px;
+          font-weight: 600;
+        }
+        
+        .markdown-content h1 { font-size: 1.5em; }
+        .markdown-content h2 { font-size: 1.3em; }
+        .markdown-content h3 { font-size: 1.1em; }
+        
+        .markdown-content p {
+          margin-bottom: 12px;
+        }
+        
+        .markdown-content ul, 
+        .markdown-content ol {
+          margin-left: 20px;
+          margin-bottom: 12px;
+        }
+        
+        .markdown-content code {
+          background-color: rgba(0, 0, 0, 0.05);
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-family: monospace;
+        }
+        
+        .markdown-content pre {
+          background-color: rgba(0, 0, 0, 0.05);
+          padding: 8px;
+          border-radius: 5px;
+          overflow-x: auto;
+          margin-bottom: 12px;
+        }
+        
+        .markdown-content pre code {
+          background-color: transparent;
+          padding: 0;
+        }
+        
+        .markdown-content blockquote {
+          border-left: 4px solid #ddd;
+          padding-left: 16px;
+          margin-left: 0;
+          color: #666;
+        }
+        
+        .markdown-content a {
+          color: #0070f3;
+          text-decoration: none;
+        }
+        
+        .markdown-content a:hover {
+          text-decoration: underline;
+        }
+        
+        .markdown-content table {
+          border-collapse: collapse;
+          width: 100%;
+          margin-bottom: 12px;
+        }
+        
+        .markdown-content table th,
+        .markdown-content table td {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+        
+        .markdown-content table th {
+          background-color: rgba(0, 0, 0, 0.05);
+          text-align: left;
+        }
+      `}</style>
     </div>
   );
 }
