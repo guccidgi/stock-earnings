@@ -46,19 +46,22 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="chat-content">
+    <div className="chat-interface">
       {/* Header */}
-      <div className="chat-header">
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-primary" />
-          <span>與您的文件對話</span>
+      <div className="interface-header">
+        <h2 className="interface-title">
+          <MessageSquare className="interface-icon" />
+          <span>Chat with Your Files</span>
         </h2>
-        {selectedFiles.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
+        <div className="interface-subtitle">
+          Ask questions about your uploaded files
+        </div>
+        {selectedFiles && selectedFiles.length > 0 && (
+          <div className="selected-files">
             {selectedFiles.map(file => (
               <span 
                 key={file.id}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                className="file-tag"
               >
                 {file.name}
               </span>
@@ -68,60 +71,58 @@ export default function ChatInterface({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="chat-messages">
-        <div className="space-y-4 pr-4">
-          {/* 只有在完全沒有消息且不是加載狀態時才顯示空狀態 */}
+      <ScrollArea className="message-container">
+        <div className="message-list">
+          {/* 空狀態顯示 */}
           {messages.length === 0 && !isLoading ? (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-center text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mb-4 text-muted-foreground" />
-              <p className="text-lg font-medium">詢問任何關於您檔案的問題</p>
-              <p className="text-sm mt-1">輸入訊息以開始對話</p>
+            <div className="empty-chat">
+              <MessageSquare className="empty-icon" />
+              <p className="empty-title">詢問任何關於您檔案的問題</p>
+              <p className="empty-subtitle">輸入訊息以開始對話</p>
             </div>
           ) : (
             <>
-              {/* 立即渲染所有消息，確保用戶輸入後立即顯示 */}
+              {/* 聊天消息 */}
               {messages.map((message, index) => (
                 <div 
                   key={`${message.id || message.session_id}_${index}`}
                   className={cn("chat-message", message.role === 'user' ? "chat-message-user" : "chat-message-system")}
                   data-testid={`message-${index}`}
                 >
-                  {message.role !== 'user' && (
-                    <Avatar className="h-8 w-8 mr-2">
-                      <AvatarFallback className="bg-primary text-primary-foreground">AI</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <Card className={cn(
-                    "max-w-[75%]",
-                    message.role === 'user' ? "bg-primary text-primary-foreground" : "bg-card"
-                  )}>
-                    <CardContent className="p-3 text-sm">
-                      {message.content}
-                      {message.file_reference && (
-                        <div className="text-xs mt-1 opacity-70">
-                          參考文件: {message.file_reference}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  {message.role === 'user' && (
-                    <Avatar className="h-8 w-8 ml-2">
-                      <AvatarFallback className="bg-secondary text-secondary-foreground">Me</AvatarFallback>
-                    </Avatar>
+                  {message.role === 'user' ? (
+                    <>
+                      <div className="message-content">{message.content}</div>
+                      <div className="user-avatar">
+                        <div className="avatar-label">Me</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="ai-avatar">
+                        <div className="avatar-label">AI</div>
+                      </div>
+                      <div className="message-content">
+                        {message.content}
+                        {message.file_reference && (
+                          <div className="file-reference">
+                            參考文件: {message.file_reference}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               ))}
+              {/* 加載中顯示 */}
               {isLoading && (
-                <div className="flex justify-start">
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarFallback className="bg-primary text-primary-foreground">AI</AvatarFallback>
-                  </Avatar>
-                  <Card className="max-w-[75%] bg-card">
-                    <CardContent className="p-3 flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">思考中...</span>
-                    </CardContent>
-                  </Card>
+                <div className="chat-message chat-message-system">
+                  <div className="ai-avatar">
+                    <div className="avatar-label">AI</div>
+                  </div>
+                  <div className="message-content loading-content">
+                    <Loader2 className="loading-icon" />
+                    <span>思考中...</span>
+                  </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -130,27 +131,27 @@ export default function ChatInterface({
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="chat-input-container">
+      {/* Input 區域 */}
+      <div className="input-container">
         {!sessionId ? (
-          <div className="text-center py-2">
-            <p className="text-muted-foreground mb-2">請先點擊「+ 新增會話」後才能發送消息</p>
+          <div className="disabled-input">
+            <p className="disabled-message">請先點擊「+ 新增會話」後才能發送消息</p>
             <Button
               disabled={true}
               variant="secondary"
-              className="opacity-50"
+              className="disabled-button"
             >
               輸入框已禁用
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex space-x-2">
+          <form onSubmit={handleSubmit} className="message-form">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
               placeholder="輸入您的訊息..."
-              className="flex-1 min-h-[40px] max-h-[120px] resize-none"
+              className="message-input"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -164,9 +165,9 @@ export default function ChatInterface({
               type="submit"
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="h-[40px] w-[40px]"
+              className="send-button"
             >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {isLoading ? <Loader2 className="send-icon spin" /> : <Send className="send-icon" />}
             </Button>
           </form>
         )}

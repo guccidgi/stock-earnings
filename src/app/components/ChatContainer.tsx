@@ -1047,81 +1047,84 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
   // 如果用戶 ID 不可用，顯示加載狀態
   if (!userId) {
     return (
-      <div className="p-8 h-full flex items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>正在加載用戶資訊...</span>
+      <div className="loading-container">
+        <div className="loading-indicator">
+          <Loader2 className="loading-spinner" />
+          <span className="loading-text">正在加載用戶資訊...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="chat-container">
-      {/* 調試面板控制 */}
-      {enableLogs && (
-        <div className="debug-panel">
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => setShowLogs(!showLogs)}
-            className="debug-panel-button"
-          >
-            {showLogs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-            <span className="text-xs">{showLogs ? '隱藏日誌' : '顯示日誌'}</span>
-          </Button>
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => setLogs([])} 
-            className="debug-panel-button"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span className="text-xs">清空日誌</span>
-          </Button>
-        </div>
-      )}
-      
-      {/* 調試日誌顯示區域 */}
-      {enableLogs && showLogs && (
-        <ScrollArea className="log-container">
-          <div className="p-2 font-mono text-xs">
-            {logs.length === 0 ? (
-              <div className="text-muted-foreground">無日誌記錄</div>
-            ) : (
-              logs.map((item, i) => (
-                <div 
-                  key={i} 
-                  className={`mb-1 ${item.type === 'error' ? 'text-destructive' : item.type === 'warn' ? 'text-amber-500' : 'text-emerald-500'}`}
-                >
-                  [{new Date().toLocaleTimeString()}] {item.message}
-                </div>
-              ))
-            )}
+    <div className="page-container">
+      <div className="chat-container">
+        {/* 調試面板控制 */}
+        {enableLogs && (
+          <div className="debug-controls">
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLogs(!showLogs)}
+              className="debug-btn"
+            >
+              {showLogs ? <EyeOff className="debug-icon" /> : <Eye className="debug-icon" />}
+              <span className="debug-text">{showLogs ? '隱藏日誌' : '顯示日誌'}</span>
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setLogs([])} 
+              className="debug-btn"
+            >
+              <Trash2 className="debug-icon" />
+              <span className="debug-text">清空日誌</span>
+            </Button>
           </div>
-        </ScrollArea>
-      )}
-      
-      <div className="chat-main">
-        {/* 左側聊天會話列表 */}
-        <ChatSidebar
-          sessions={chatSessions}
-          activeSessionId={activeSessionId}
-          onSessionSelect={setActiveSessionId}
-          onNewSession={createNewSession}
-          onDeleteSession={deleteSession}
-          isLoading={isLoading}
-        />
-
-        {/* 右側聊天界面 */}
-        <div className="chat-content">
-          <ChatInterface
-            messages={messages}
-            onSendMessage={sendMessage}
+        )}
+        
+        {/* 調試日誌顯示區域 */}
+        {enableLogs && showLogs && (
+          <ScrollArea className="logs-panel">
+            <div className="logs-content">
+              {logs.length === 0 ? (
+                <div className="empty-logs">無日誌記錄</div>
+              ) : (
+                logs.map((item, i) => (
+                  <div 
+                    key={i} 
+                    className={`log-entry ${item.type === 'error' ? 'log-error' : item.type === 'warn' ? 'log-warning' : 'log-info'}`}
+                  >
+                    [{new Date().toLocaleTimeString()}] {item.message}
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        )}
+        
+        <div className="chat-layout">
+          {/* 左側聊天會話列表 */}
+          <ChatSidebar
+            sessions={chatSessions}
+            activeSessionId={activeSessionId}
+            onSessionSelect={setActiveSessionId}
+            onNewSession={createNewSession}
+            onDeleteSession={deleteSession}
             isLoading={isLoading}
-            error={error}
-            sessionId={activeSessionId}
           />
+
+          {/* 右側聊天界面 */}
+          <div className="chat-area">
+            <ChatInterface
+              messages={messages}
+              onSendMessage={sendMessage}
+              isLoading={isLoading}
+              error={error}
+              sessionId={activeSessionId}
+              selectedFiles={files}
+            />
+          </div>
         </div>
       </div>
     </div>

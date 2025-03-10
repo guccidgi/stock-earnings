@@ -22,7 +22,7 @@ export default function Header({ userEmail, onSignOut, onChatWithFiles, showingC
     <header className="app-header">
       <div className="header-container">
         <div className="header-logo">
-          <h1 className="app-title">FileChat</h1>
+          <h1 className="app-title">FileChat(RAG)</h1>
         </div>
         
         {userEmail && (

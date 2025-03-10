@@ -5,9 +5,10 @@ import { FileInfo } from '../types';
 type FileListProps = {
   files: FileInfo[];
   onRefresh: () => void;
+  onChatWithFiles?: () => void;
 };
 
-export default function FileList({ files, onRefresh }: FileListProps) {
+export default function FileList({ files, onRefresh, onChatWithFiles }: FileListProps) {
   async function handleDeleteFile(id: string, filePath: string) {
     console.log('Attempting to delete file:', { id, filePath });
     try {
@@ -101,7 +102,18 @@ export default function FileList({ files, onRefresh }: FileListProps) {
 
   return (
     <div className="card">
-      <h2 className="section-title">您的檔案</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 className="section-title">您的檔案</h2>
+        {onChatWithFiles && (
+          <button
+            onClick={onChatWithFiles}
+            className="btn btn-primary"
+            style={{ marginRight: '3px', marginTop: '-15px' }}
+          >
+            Chat with Files
+          </button>
+        )}
+      </div>
       
       {files.length === 0 ? (
         <div className="empty-state">

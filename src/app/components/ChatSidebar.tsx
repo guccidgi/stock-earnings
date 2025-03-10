@@ -1,11 +1,13 @@
 import React from 'react';
 import { ChatSession, ChatMessage } from '../types';
-import { MessageCircle, Plus, Trash2, MoreHorizontal } from 'lucide-react';
+import { MessageCircle, Plus, Trash2, MoreHorizontal, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { supabase } from '../supabase';
+import { useRouter } from 'next/navigation';
 
 type ChatSidebarProps = {
   sessions: ChatSession[];
@@ -48,53 +50,78 @@ export default function ChatSidebar({
   onDeleteSession,
   isLoading
 }: ChatSidebarProps) {
+  const router = useRouter();
+  
+  // 處理登出功能
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('登出錯誤:', error.message);
+        alert(`登出失敗: ${error.message}`);
+      } else {
+        // 登出成功後導向首頁
+        window.location.href = '/';
+      }
+    } catch (err) {
+      console.error('登出時發生錯誤:', err);
+      alert('登出時發生錯誤，請稍後再試');
+    }
+  };
   return (
     <div className="chat-sidebar">
-      <div className="chat-header">
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <span>您的對話</span>
+      <div className="sidebar-header">
+        <h2 className="sidebar-title">
+          Your Chats
         </h2>
         <Button 
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={onNewSession}
-          className="h-8 w-8"
+          className="new-chat-btn"
           aria-label="新增對話"
         >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
       
-      <ScrollArea className="flex-1">
+      <ScrollArea className="sidebar-content">
         {sessions.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            尚無對話，點擊「+」新增對話
+          <div className="empty-chats">
+            <Plus className="empty-icon" />
+            <p>尚無對話，點擊「+」新增對話</p>
           </div>
         ) : (
-          <div className="py-2">
+          <div className="chat-list">
             {sessions.map((session, index) => (
               <React.Fragment key={`${session.id}_${index}`}>
                 <div 
                   className={cn(
-                    "group px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors",
-                    activeSessionId === session.id ? "bg-accent text-accent-foreground" : "text-foreground"
+                    "chat-item",
+                    activeSessionId === session.id ? "active" : ""
                   )}
                   onClick={() => onSessionSelect(session.id)}
                 >
-                  <div className="flex items-start gap-3">
-                    <MessageCircle className="h-5 w-5 mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{getSessionTitle(session)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(session.updated_at)}
-                      </p>
+                  <div className="chat-item-content">
+                    <div className="chat-item-icon">
+                      <MessageCircle className="chat-icon" />
+                    </div>
+                    <div className="chat-info">
+                      <p className="chat-title">{getSessionTitle(session)}</p>
+                      <div className="chat-meta">
+                        <p className="chat-date">
+                          {formatDate(session.updated_at)}
+                        </p>
+                        <p className="chat-id">
+                          {session.id.substring(0, 16)}...
+                        </p>
+                      </div>
                     </div>
                     {onDeleteSession && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="delete-btn"
                         onClick={(e) => {
                           e.stopPropagation();  // 防止觸發會話選擇
                           if (window.confirm(`確定要刪除對話 "${getSessionTitle(session)}" 嗎？`)) {
@@ -103,13 +130,13 @@ export default function ChatSidebar({
                         }}
                         aria-label="刪除對話"
                       >
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     )}
                   </div>
                 </div>
                 {index < sessions.length - 1 && (
-                  <Separator className="my-1 mx-3" />
+                  <Separator className="chat-separator" />
                 )}
               </React.Fragment>
             ))}
@@ -118,11 +145,22 @@ export default function ChatSidebar({
       </ScrollArea>
       
       {isLoading && (
-        <div className="p-3 border-t border-border text-xs text-muted-foreground flex items-center justify-center">
-          <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
+        <div className="sidebar-loading">
+          <div className="loading-spinner"></div>
           加載中...
         </div>
       )}
+      <div className="sidebar-footer">
+        <Button 
+          variant="outline" 
+          className="sign-out-btn" 
+          onClick={handleSignOut}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <LogOut className="h-4 w-4 mr-2" style={{ marginTop: '1px'}} />
+          <span>Sign Out</span>
+        </Button>
+      </div>
     </div>
   );
 }

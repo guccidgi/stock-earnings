@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FileChat - Transform the Way You Interact with Your Files",
+  title: "FileChat(RAG) - Transform the Way You Interact with Your Files",
   description: "Upload, manage, and chat with your files in a seamless, intuitive environment.",
 };
 

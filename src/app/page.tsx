@@ -331,7 +331,7 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="mt-4">
-                      <FileList files={files} onRefresh={() => user && fetchFiles(user.id)} />
+                      <FileList files={files} onRefresh={() => user && fetchFiles(user.id)} onChatWithFiles={() => setShowChat(!showChat)} />
                     </div>
                   )}
                 </>
@@ -344,10 +344,20 @@ export default function Home() {
       ) : (
         <div className="landing-container">
           <header className="landing-header">
-            <h1 className="app-title">FileChat</h1>
+            <div className="header-left">
+              <h1 className="app-title">FileChat(RAG)</h1>
+            </div>
+            <div className="header-right">
+              <button 
+                className="sign-up-btn"
+                onClick={() => setShowAuthForm(true)}
+              >
+                Sign Up
+              </button>
+            </div>
           </header>
           
-          <div className="welcome-container">
+          <div className="hero-section">
             {!showAuthForm ? (
               <div className="welcome-content">
                 <h2 className="app-subtitle">
@@ -379,7 +389,7 @@ export default function Home() {
                       // Add functionality for learning more
                     }}
                   >
-                    Learn more about FileChat →
+                    Learn more about FileChat(RAG) →
                   </a>
                 </div>
               </div>
@@ -387,7 +397,7 @@ export default function Home() {
           </div>
           
           <footer className="app-footer">
-            © {new Date().getFullYear()} FileChat. All rights reserved.
+            © {new Date().getFullYear()} FileChat(RAG). All rights reserved.
           </footer>
         </div>
       )}
