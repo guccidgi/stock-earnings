@@ -3,8 +3,12 @@ import { supabase } from '../supabase';
 import { ChatSession, ChatMessage, N8nChatHistory } from '../types';
 import ChatSidebar from './ChatSidebar';
 import ChatInterface from './ChatInterface';
-
 import { FileInfo } from '../types';
+
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Toggle } from '@/components/ui/toggle';
+import { Eye, EyeOff, Trash2, Loader2 } from 'lucide-react';
 
 interface ChatContainerProps {
   userId?: string; // 可選，如果未提供則從 supabase auth 獲取
@@ -1042,48 +1046,63 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
 
   // 如果用戶 ID 不可用，顯示加載狀態
   if (!userId) {
-    return <div className="p-4 text-center">Loading user information...</div>;
+    return (
+      <div className="p-8 h-full flex items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>正在加載用戶資訊...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="chat-container">
       {/* 調試面板控制 */}
       {enableLogs && (
-        <div className="p-1 bg-gray-100 border-b flex justify-between items-center text-xs">
-          <button 
+        <div className="debug-panel">
+          <Button 
+            variant="outline"
+            size="sm"
             onClick={() => setShowLogs(!showLogs)}
-            className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="debug-panel-button"
           >
-            {showLogs ? '隱藏日誌' : '顯示日誌'}
-          </button>
-          <button 
+            {showLogs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            <span className="text-xs">{showLogs ? '隱藏日誌' : '顯示日誌'}</span>
+          </Button>
+          <Button 
+            variant="outline"
+            size="sm"
             onClick={() => setLogs([])} 
-            className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+            className="debug-panel-button"
           >
-            清空日誌
-          </button>
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="text-xs">清空日誌</span>
+          </Button>
         </div>
       )}
       
       {/* 調試日誌顯示區域 */}
       {enableLogs && showLogs && (
-        <div className="bg-black text-gray-100 p-2 text-xs font-mono overflow-auto" style={{ maxHeight: '200px' }}>
-          {logs.length === 0 ? (
-            <div className="text-gray-500">無日誌記錄</div>
-          ) : (
-            logs.map((item, i) => (
-              <div 
-                key={i} 
-                className={`mb-1 ${item.type === 'error' ? 'text-red-400' : item.type === 'warn' ? 'text-yellow-300' : 'text-green-300'}`}
-              >
-                [{new Date().toLocaleTimeString()}] {item.message}
-              </div>
-            ))
-          )}
-        </div>
+        <ScrollArea className="log-container">
+          <div className="p-2 font-mono text-xs">
+            {logs.length === 0 ? (
+              <div className="text-muted-foreground">無日誌記錄</div>
+            ) : (
+              logs.map((item, i) => (
+                <div 
+                  key={i} 
+                  className={`mb-1 ${item.type === 'error' ? 'text-destructive' : item.type === 'warn' ? 'text-amber-500' : 'text-emerald-500'}`}
+                >
+                  [{new Date().toLocaleTimeString()}] {item.message}
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       )}
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="chat-main">
         {/* 左側聊天會話列表 */}
         <ChatSidebar
           sessions={chatSessions}
@@ -1095,7 +1114,7 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
         />
 
         {/* 右側聊天界面 */}
-        <div className="flex-1 flex flex-col">
+        <div className="chat-content">
           <ChatInterface
             messages={messages}
             onSendMessage={sendMessage}

@@ -1,7 +1,11 @@
 import React from 'react';
 import { ChatSession, ChatMessage } from '../types';
-import { MessageCircle, Plus, Trash2 } from 'lucide-react';
+import { MessageCircle, Plus, Trash2, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 type ChatSidebarProps = {
   sessions: ChatSession[];
@@ -45,64 +49,80 @@ export default function ChatSidebar({
   isLoading
 }: ChatSidebarProps) {
   return (
-    <div className="h-full flex flex-col bg-white border-r border-gray-200 w-64">
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">您的對話</h2>
-        <button 
+    <div className="chat-sidebar">
+      <div className="chat-header">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-primary" />
+          <span>您的對話</span>
+        </h2>
+        <Button 
+          variant="ghost"
+          size="icon"
           onClick={onNewSession}
-          className="text-gray-600 hover:text-gray-900"
-          aria-label="New Chat"
+          className="h-8 w-8"
+          aria-label="新增對話"
         >
-          <Plus size={20} />
-        </button>
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
       
-      <div className="flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         {sessions.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">
-            No chat sessions yet.
+          <div className="p-4 text-center text-muted-foreground">
+            尚無對話，點擊「+」新增對話
           </div>
         ) : (
-          <ul className="divide-y divide-gray-200">
+          <div className="py-2">
             {sessions.map((session, index) => (
-              <li 
-                key={`${session.id}_${index}`}
-                className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${activeSessionId === session.id ? 'bg-gray-100' : ''}`}
-              >
+              <React.Fragment key={`${session.id}_${index}`}>
                 <div 
-                  className="p-4 flex items-start gap-3"
+                  className={cn(
+                    "group px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors",
+                    activeSessionId === session.id ? "bg-accent text-accent-foreground" : "text-foreground"
+                  )}
                   onClick={() => onSessionSelect(session.id)}
                 >
-                  <MessageCircle className="text-gray-500 mt-1" size={20} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{getSessionTitle(session)}</p>
-                    <p className="text-sm text-gray-500">
-                      {formatDate(session.updated_at)}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">ID: {session.id.substring(0, 8)}...</p>
+                  <div className="flex items-start gap-3">
+                    <MessageCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{getSessionTitle(session)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(session.updated_at)}
+                      </p>
+                    </div>
+                    {onDeleteSession && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();  // 防止觸發會話選擇
+                          if (window.confirm(`確定要刪除對話 "${getSessionTitle(session)}" 嗎？`)) {
+                            onDeleteSession(session.id);
+                          }
+                        }}
+                        aria-label="刪除對話"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                      </Button>
+                    )}
                   </div>
-                  {onDeleteSession && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();  // Prevent triggering session selection
-                        if (window.confirm(`確定要刪除對話 "${getSessionTitle(session)}" 嗎？`)) {
-                          onDeleteSession(session.id);
-                        }
-                      }}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
-                      aria-label="Delete chat"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
                 </div>
-              </li>
+                {index < sessions.length - 1 && (
+                  <Separator className="my-1 mx-3" />
+                )}
+              </React.Fragment>
             ))}
-          </ul>
+          </div>
         )}
-      </div>
+      </ScrollArea>
       
-      {/* 移除底部的新建對話按鈕，因為我們已經在頂部添加了一個 */}
+      {isLoading && (
+        <div className="p-3 border-t border-border text-xs text-muted-foreground flex items-center justify-center">
+          <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
+          加載中...
+        </div>
+      )}
     </div>
   );
 }

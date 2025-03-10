@@ -302,7 +302,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
       {user ? (
         <>
           <Header 
@@ -312,15 +312,13 @@ export default function Home() {
             showingChat={showChat}
           />
           
-          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0">
-              <div className="mb-6 text-center">
-                <h2 className="text-3xl font-bold text-gray-900">Transform the Way You Interact with Your Files</h2>
-                <p className="mt-4 text-lg text-gray-600">
+          <div className="container">
+            <div className="mb-6">
+              <div className="welcome-header mb-6">
+                <h2 className="app-subtitle">Transform the Way You <span className="app-subtitle-highlight">Interact</span> with Your Files</h2>
+                <p className="app-description">
                   Upload, manage, and chat with your files in a seamless, intuitive environment.
                 </p>
-                
-
               </div>
               
               {!showChat ? (
@@ -328,11 +326,11 @@ export default function Home() {
                   <FileUpload userId={user.id} userRole={user.role} onUploadComplete={handleUploadComplete} />
                   
                   {error ? (
-                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                      <p className="text-red-600">{error}</p>
+                    <div className="error-message">
+                      <p>{error}</p>
                       <button 
                         onClick={() => user && fetchFiles(user.id)}
-                        className="mt-2 text-sm text-red-700 hover:text-red-900 font-medium"
+                        className="btn-link"
                       >
                         重試
                       </button>
@@ -348,23 +346,23 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col min-h-screen">
-          <div className="flex-1 flex flex-col items-center justify-center p-4">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">FileChat</h1>
-              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-                Transform the Way You <span className="text-indigo-600">Interact</span> with Your Files
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <div className="welcome-container">
+            <div className="welcome-header">
+              <h1 className="app-title">FileChat</h1>
+              <h2 className="app-subtitle">
+                Transform the Way You <span className="app-subtitle-highlight">Interact</span> with Your Files
               </h2>
-              <p className="text-gray-600 max-w-md mx-auto">
+              <p className="app-description">
                 Upload, manage, and chat with your files in a seamless, intuitive environment.
               </p>
             </div>
             
             <AuthForm onSuccess={handleAuthSuccess} />
 
-            <div className="mt-10">
+            <div className="learn-more">
               <a
-                className="text-indigo-600 hover:text-indigo-800 font-medium"
+                className="learn-more-link"
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
@@ -376,7 +374,7 @@ export default function Home() {
             </div>
           </div>
           
-          <footer className="py-4 text-center text-gray-500 text-sm">
+          <footer className="app-footer">
             © {new Date().getFullYear()} FileChat. All rights reserved.
           </footer>
         </div>

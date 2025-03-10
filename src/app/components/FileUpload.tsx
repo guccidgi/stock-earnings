@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
+import { cn } from '@/lib/utils';
+import { AlertCircle, Upload, Loader2 } from 'lucide-react';
 
 type FileUploadProps = {
   userId: string;
@@ -101,19 +103,33 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
   return (
     <div className="w-full max-w-xl mx-auto mb-8">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-          {error}
+        <div className="flex items-center gap-2 rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-destructive mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <p className="text-sm font-medium">{error}</p>
         </div>
       )}
       
-      <label className="flex flex-col items-center px-4 py-6 bg-white rounded-lg shadow-lg tracking-wide border border-blue-200 cursor-pointer hover:bg-blue-50 transition-colors">
-        <div className="flex items-center justify-center">
-          <svg className="w-8 h-8 text-blue-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
-          </svg>
-          <span className="ml-3 text-base leading-normal">
-            {uploading ? 'Uploading...' : 'Select a file'}
-          </span>
+      <label className={cn(
+        "relative flex flex-col items-center justify-center px-4 py-8 rounded-lg",
+        "border-2 border-dashed border-primary/30 bg-background",
+        "hover:bg-accent/20 hover:border-primary/50 transition-colors",
+        "cursor-pointer",
+        uploading && "opacity-70 cursor-not-allowed"
+      )}>
+        <div className="flex flex-col items-center justify-center space-y-2 text-center">
+          {uploading ? (
+            <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          ) : (
+            <Upload className="h-10 w-10 text-primary" />
+          )}
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              {uploading ? '正在上傳...' : '點擊或拖放檔案至此處'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              支援各類文件格式
+            </p>
+          </div>
         </div>
         <input 
           type='file' 
@@ -122,14 +138,17 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
           disabled={uploading}
         />
       </label>
-      <p className="text-sm text-gray-500 text-center mt-2">
-        Upload documents, images, and other files to chat with
-      </p>
-      {userRole === 'User' && (
-        <p className="text-xs text-orange-500 text-center mt-1">
-          注意：一般用戶僅能上傳小於 200KB 的檔案
+      
+      <div className="mt-4 space-y-2">
+        <p className="text-sm text-muted-foreground text-center">
+          上傳文件以便與之對話互動
         </p>
-      )}
+        {userRole === 'User' && (
+          <p className="text-xs font-medium text-orange-500 text-center">
+            注意：一般用戶僅能上傳小於 200KB 的檔案
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, ensureProfile, recoverSession } from '../supabase';
 
+// u4F7Fu7528u76F4u63A5u5F15u5165u800Cu4E0Du7D93u904Eu5143u4EF6u5EAB
+import { AlertCircle, Loader2, Mail, Lock } from 'lucide-react';
+
+// u4E0Du4F7Fu7528 shadcn u5143u4EF6uFF0Cu6539u7528u57FAu672C HTML u5143u7D20
+
 type AuthFormProps = {
   onSuccess: (userRole?: string) => void;
 };
@@ -192,61 +197,69 @@ export default function AuthForm({ onSuccess }: AuthFormProps) {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
-      <h2 className="text-2xl font-bold text-center mb-6">
-        {isSignUp ? 'Sign Up' : 'Sign In'}
+    <div className="auth-form">
+      <h2>
+        {isSignUp ? '註冊帳號' : '登入系統'}
       </h2>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-          {error}
+        <div className="error-message">
+          <AlertCircle className="input-icon" />
+          <p>{error}</p>
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-black"
-          />
+      <form onSubmit={handleSubmit}>
+        <div className="auth-form-group">
+          <label htmlFor="email">電子郵件</label>
+          <div className="input-wrapper">
+            <Mail className="input-icon" />
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              disabled={loading}
+            />
+          </div>
         </div>
         
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-black"
-          />
+        <div className="auth-form-group">
+          <label htmlFor="password">密碼</label>
+          <div className="input-wrapper">
+            <Lock className="input-icon" />
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="•••••••••"
+              disabled={loading}
+            />
+          </div>
         </div>
         
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="btn btn-primary btn-block mt-2"
         >
-          {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Sign In'}
+          {loading && <Loader2 className="loading-indicator" />}
+          {loading ? '處理中...' : isSignUp ? '註冊' : '登入'}
         </button>
       </form>
       
-      <div className="mt-4 text-center">
+      <div className="text-center mt-5">
         <button 
           onClick={() => setIsSignUp(!isSignUp)} 
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          className="btn-link"
+          disabled={loading}
+          type="button"
         >
-          {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+          {isSignUp ? '已有帳號? 立即登入' : '需要新帳號? 立即註冊'}
         </button>
       </div>
     </div>

@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, FileInfo } from '../types';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { Send, MessageSquare, Loader2 } from 'lucide-react';
 
 type ChatInterfaceProps = {
   messages: ChatMessage[];
@@ -39,16 +46,19 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="chat-content">
       {/* Header */}
-      <div className="p-4 bg-white border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">Chat with Your Files</h2>
+      <div className="chat-header">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <MessageSquare className="h-5 w-5 text-primary" />
+          <span>與您的文件對話</span>
+        </h2>
         {selectedFiles.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {selectedFiles.map(file => (
               <span 
                 key={file.id}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
               >
                 {file.name}
               </span>
@@ -58,85 +68,106 @@ export default function ChatInterface({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* 只有在完全沒有消息且不是加載狀態時才顯示空狀態 */}
-        {messages.length === 0 && !isLoading ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-            <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="text-lg font-medium">Ask anything about your files</p>
-            <p className="text-sm mt-1">Type a message to start the conversation</p>
-          </div>
-        ) : (
-          <>
-            {/* 立即渲染所有消息，確保用戶輸入後立即顯示 */}
-            {messages.map((message, index) => (
-              <div 
-                key={`${message.id || message.session_id}_${index}`}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                data-testid={`message-${index}`}
-              >
+      <ScrollArea className="chat-messages">
+        <div className="space-y-4 pr-4">
+          {/* 只有在完全沒有消息且不是加載狀態時才顯示空狀態 */}
+          {messages.length === 0 && !isLoading ? (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center text-muted-foreground">
+              <MessageSquare className="h-12 w-12 mb-4 text-muted-foreground" />
+              <p className="text-lg font-medium">詢問任何關於您檔案的問題</p>
+              <p className="text-sm mt-1">輸入訊息以開始對話</p>
+            </div>
+          ) : (
+            <>
+              {/* 立即渲染所有消息，確保用戶輸入後立即顯示 */}
+              {messages.map((message, index) => (
                 <div 
-                  className={`max-w-3/4 p-3 rounded-lg ${message.role === 'user' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white border border-gray-200 text-gray-800'}`}
+                  key={`${message.id || message.session_id}_${index}`}
+                  className={cn("chat-message", message.role === 'user' ? "chat-message-user" : "chat-message-system")}
+                  data-testid={`message-${index}`}
                 >
-                  {message.content}
-                  {message.file_reference && (
-                    <div className="text-xs mt-1 opacity-70">
-                      Reference: {message.file_reference}
-                    </div>
+                  {message.role !== 'user' && (
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarFallback className="bg-primary text-primary-foreground">AI</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <Card className={cn(
+                    "max-w-[75%]",
+                    message.role === 'user' ? "bg-primary text-primary-foreground" : "bg-card"
+                  )}>
+                    <CardContent className="p-3 text-sm">
+                      {message.content}
+                      {message.file_reference && (
+                        <div className="text-xs mt-1 opacity-70">
+                          參考文件: {message.file_reference}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  {message.role === 'user' && (
+                    <Avatar className="h-8 w-8 ml-2">
+                      <AvatarFallback className="bg-secondary text-secondary-foreground">Me</AvatarFallback>
+                    </Avatar>
                   )}
                 </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="max-w-3/4 p-3 rounded-lg bg-white border border-gray-200 text-gray-800">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <Avatar className="h-8 w-8 mr-2">
+                    <AvatarFallback className="bg-primary text-primary-foreground">AI</AvatarFallback>
+                  </Avatar>
+                  <Card className="max-w-[75%] bg-card">
+                    <CardContent className="p-3 flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">思考中...</span>
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </div>
+              )}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+      </ScrollArea>
 
       {/* Input */}
-      <div className="p-4 bg-white border-t border-gray-200">
+      <div className="chat-input-container">
         {!sessionId ? (
           <div className="text-center py-2">
-            <p className="text-gray-500 mb-2">請先點擊「+ 新增會話」後才能發送消息</p>
-            <button
-              type="button"
+            <p className="text-muted-foreground mb-2">請先點擊「+ 新增會話」後才能發送消息</p>
+            <Button
               disabled={true}
-              className="px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed"
+              variant="secondary"
+              className="opacity-50"
             >
               輸入框已禁用
-            </button>
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex space-x-2">
-            <input
-              type="text"
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
-              placeholder="Type your message..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+              placeholder="輸入您的訊息..."
+              className="flex-1 min-h-[40px] max-h-[120px] resize-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (input.trim() && !isLoading) {
+                    handleSubmit(e);
+                  }
+                }
+              }}
             />
-            <button
+            <Button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              size="icon"
+              className="h-[40px] w-[40px]"
             >
-              Send
-            </button>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
           </form>
         )}
       </div>
