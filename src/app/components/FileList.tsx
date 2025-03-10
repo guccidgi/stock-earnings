@@ -200,9 +200,14 @@ export default function FileList({ files, onRefresh, onChatWithFiles }: FileList
     }
   `;
   
-  async function handleDeleteFile(id: string, filePath: string) {
+  async function handleDeleteFile(id: string, filePath?: string) {
     console.log('Attempting to delete file:', { id, filePath });
     try {
+      // Check if filePath exists
+      if (!filePath) {
+        throw new Error('File path is missing');
+      }
+      
       // Extract the actual path from the full URL if needed
       const actualPath = filePath.includes('public/') 
         ? filePath.split('public/')[1] 
@@ -256,11 +261,14 @@ export default function FileList({ files, onRefresh, onChatWithFiles }: FileList
   }
 
   // Format date
-  function formatDate(dateString: string): string {
+  function formatDate(dateString?: string): string {
+    if (!dateString) {
+      return '無日期資訊';
+    }
     return new Date(dateString).toLocaleString();
   }
 
-  function getFileUrl(fileUrl: string) {
+  function getFileUrl(fileUrl?: string) {
     console.log('Opening file URL in new tab:', fileUrl);
     try {
       // Make sure we have a valid URL

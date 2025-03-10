@@ -1,10 +1,19 @@
+// @ts-ignore: Deno imports are not recognized by TypeScript in a Node.js project
 // Import directly from the Deno standard library
 // Supabase Edge Functions use Deno and this specific import style is recommended
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 // n8n webhook URL - we're using environment variable approach for better security
 // In production, set this via Supabase Dashboard > Settings > API > Environment Variables
-const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'https://n8n-guccidgi.zeabur.app/webhook/f8fd19bb-50cb-4d96-ac06-0f4d7b5221a2';
+// @ts-ignore: Deno namespace is not recognized by TypeScript in a Node.js project
+// In Deno, we use Deno.env.get() to access environment variables
+const N8N_WEBHOOK_URL = Deno.env.get('N8N_WEBHOOK_URL');
+
+// Check if the webhook URL is defined
+if (!N8N_WEBHOOK_URL) {
+  console.error('N8N_WEBHOOK_URL environment variable is not set');
+  throw new Error('Missing required environment variable: N8N_WEBHOOK_URL');
+}
 
 // Define interfaces for request/response
 interface ChatRequestPayload {

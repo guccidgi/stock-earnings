@@ -199,17 +199,17 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
           if (item.message) {
             try {
               let msgContent = '';
-              let msgRole: 'system' | 'user' = 'system';
+              let msgRole: 'assistant' | 'user' = 'assistant';
               
               if (typeof item.message === 'object') {
                 const msgObj = item.message;
                 msgContent = msgObj.content || '';
-                msgRole = msgObj.type === 'human' ? 'user' : 'system';
+                msgRole = msgObj.type === 'human' ? 'user' : 'assistant';
               } else if (typeof item.message === 'string') {
                 try {
                   const parsedMsg = JSON.parse(item.message);
                   msgContent = parsedMsg.content || '';
-                  msgRole = parsedMsg.type === 'human' ? 'user' : 'system';
+                  msgRole = parsedMsg.type === 'human' ? 'user' : 'assistant';
                 } catch (e) {
                   msgContent = item.message;
                 }
@@ -306,20 +306,20 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
           if (specificRecord.message) {
             log(`Record message type: ${typeof specificRecord.message}`, 'info');
             let messageContent = '';
-            let messageRole: 'system' | 'user' = 'system';
+            let messageRole: 'assistant' | 'user' = 'assistant';
             
             if (typeof specificRecord.message === 'object') {
               log(`Message content (object): ${JSON.stringify(specificRecord.message)}`, 'info');
               // 從對象中提取內容
               const messageObj = specificRecord.message;
               messageContent = messageObj.content || '';
-              messageRole = messageObj.type === 'human' ? 'user' : 'system';
+              messageRole = messageObj.type === 'human' ? 'user' : 'assistant';
             } else if (typeof specificRecord.message === 'string') {
               try {
                 const parsedMessage = JSON.parse(specificRecord.message);
                 log(`Message content (parsed): ${JSON.stringify(parsedMessage)}`, 'info');
                 messageContent = parsedMessage.content || '';
-                messageRole = parsedMessage.type === 'human' ? 'user' : 'system';
+                messageRole = parsedMessage.type === 'human' ? 'user' : 'assistant';
               } catch (e) {
                 log(`Error parsing message: ${e instanceof Error ? e.message : String(e)}`, 'error');
                 log(`Raw message content: ${specificRecord.message}`, 'info');
@@ -346,7 +346,7 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
           const allMessages = specificRecords.map((record, index) => {
             try {
               let msgContent = '';
-              let msgRole: 'system' | 'user' = 'system';
+              let msgRole: 'assistant' | 'user' = 'assistant';
               let uniqueId = `${sessionId}_${record.id}_${index}`;
               
               // 嘗試解析並提取消息內容
@@ -355,14 +355,14 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
                   const msgObj = record.message;
                   msgContent = msgObj.content || '';
                   // 根據 n8n 的診斷記錄，將 'human' 類型轉換為 'user' 角色
-                  msgRole = msgObj.type === 'human' ? 'user' : 'system';
+                  msgRole = msgObj.type === 'human' ? 'user' : 'assistant';
                   log(`Object message type: ${msgObj.type}, converted role: ${msgRole}`, 'info');
                 } else if (typeof record.message === 'string') {
                   try {
                     const parsedMsg = JSON.parse(record.message);
                     msgContent = parsedMsg.content || '';
                     // 同樣將 'human' 類型轉換為 'user' 角色
-                    msgRole = parsedMsg.type === 'human' ? 'user' : 'system';
+                    msgRole = parsedMsg.type === 'human' ? 'user' : 'assistant';
                     log(`String message type: ${parsedMsg.type}, converted role: ${msgRole}`, 'info');
                   } catch (e) {
                     msgContent = record.message;
@@ -373,8 +373,8 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
               
               // 確保 ID 在同一個會話中是唯一的，即使有多條相同 session_id 的記錄
               // 如果是系統消息，則添加時間戳以確保是唯一的
-              if (msgRole === 'system') {
-                uniqueId = `${uniqueId}_system_${Date.now()}`;
+              if (msgRole === 'assistant') {
+                uniqueId = `${uniqueId}_assistant_${Date.now()}`;
               }
               
               return {
@@ -388,7 +388,7 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
               log(`Error processing record at index ${index}: ${err}`, 'error');
               return null;
             }
-          }).filter((msg): msg is ChatMessage => msg !== null); // 移除 null 項並確保類型正確
+          }).filter((msg): msg is NonNullable<typeof msg> => msg !== null) as ChatMessage[]; // 移除 null 項並確保類型正確
           
           if (allMessages.length > 0) {
             log(`成功處理 ${allMessages.length} 條消息`, 'info');
@@ -414,7 +414,7 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
                       id: `${sessionId}_${currentRecord.id}_${index}`,
                       session_id: sessionId,
                       content: '',
-                      role: 'user' as 'user' | 'system',  // 確保類型正確
+                      role: 'user' as 'user' | 'assistant',  // 確保類型正確
                       created_at: new Date().toISOString(),
                     };
                   }
@@ -426,7 +426,7 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
                     id: `${sessionId}_${currentRecord.id}_${index}`,
                     session_id: sessionId,
                     content: msg.content || msg.message || '',
-                    role: (msg.role || (msg.isUser ? 'user' : 'system')) as 'user' | 'system',  // 確保類型正確
+                    role: (msg.role || (msg.isUser ? 'user' : 'assistant')) as 'user' | 'assistant',  // 確保類型正確
                     created_at: msg.timestamp || new Date().toISOString(),
                   };
                 });
@@ -525,7 +525,7 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
                     id: `${mostRecentRecord.session_id}_${index}`,
                     session_id: String(mostRecentRecord.session_id),
                     content: msg.content || msg.message || '',
-                    role: msg.role || (msg.isUser ? 'user' : 'system'),
+                    role: msg.role || (msg.isUser ? 'user' : 'assistant'),
                     created_at: msg.timestamp || new Date().toISOString(),
                   };
                 });
@@ -618,7 +618,7 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
           id: `${sessionId}_${index}`,
           session_id: sessionId,
           content: msg.content || msg.message || '',
-          role: msg.role || (msg.isUser ? 'user' : 'system'),
+          role: msg.role || (msg.isUser ? 'user' : 'assistant'),
           created_at: msg.timestamp || new Date().toISOString(),
         };
       });

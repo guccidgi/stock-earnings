@@ -14,7 +14,7 @@ export type FileInfo = {
   name: string;
   size: number;
   type: string;
-  file: File;
+  file?: File;
   file_path?: string;
   storage_path?: string;
   created_at?: string;
