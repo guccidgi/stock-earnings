@@ -1139,19 +1139,21 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
           </ScrollArea>
         )}
         
-        <div className="chat-layout">
+        <div className="chat-layout" style={{ width: '100%', display: 'flex' }}>
           {/* 左側聊天會話列表 */}
-          <ChatSidebar
-            sessions={chatSessions}
-            activeSessionId={activeSessionId}
-            onSessionSelect={setActiveSessionId}
-            onNewSession={createNewSession}
-            onDeleteSession={deleteSession}
-            isLoading={isLoading}
-          />
+          <div style={{ width: '280px', minWidth: '280px', flexShrink: 0 }}>
+            <ChatSidebar
+              sessions={chatSessions}
+              activeSessionId={activeSessionId}
+              onSessionSelect={setActiveSessionId}
+              onNewSession={createNewSession}
+              onDeleteSession={deleteSession}
+              isLoading={isLoading}
+            />
+          </div>
 
           {/* 右側聊天界面 */}
-          <div className="chat-area">
+          <div className="chat-area" style={{ flex: '1 1 auto', minWidth: '800px', width: 'calc(100% - 280px)' }}>
             <ChatInterface
               messages={messages}
               onSendMessage={sendMessage}
