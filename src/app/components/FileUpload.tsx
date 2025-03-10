@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../supabase';
 import { AlertCircle, Upload, Loader2 } from 'lucide-react';
 
@@ -28,11 +28,7 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchUserFiles();
-  }, [userId]);
-
-  async function fetchUserFiles() {
+  const fetchUserFiles = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('files')
@@ -42,10 +38,16 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
       
       if (error) throw error;
       setFiles(data || []);
-    } catch (err: any) {
-      console.error('Error fetching files:', err);
+    } catch (err: unknown) {
+      console.error('Error fetching files:', err instanceof Error ? err.message : String(err));
     }
-  }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchUserFiles();
+  }, [fetchUserFiles]);
+
+  // fetchUserFiles 已經使用 useCallback 移至上方
 
   // 處理文件上傳，可以接受來自 input 或拖放的文件
   async function handleFileUpload(file: File) {
@@ -128,9 +130,9 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
       console.log('File upload completed successfully');
       fetchUserFiles(); // 重新获取文件列表
       onUploadComplete();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('File upload failed with error:', err);
-      setError(err.message || 'Error uploading file');
+      setError(err instanceof Error ? err.message : 'Error uploading file');
     } finally {
       setUploading(false);
       // Reset file input
@@ -138,6 +140,8 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
     }
   }
 
+  // 用於刪除文件的函數 - 在UI中使用
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function handleDeleteFile(fileId: string, filePath: string) {
     try {
       // 1. 從存儲中刪除文件
@@ -157,12 +161,14 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
       
       // 3. 更新狀態
       fetchUserFiles();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting file:', err);
-      setError(err.message || '刪除檔案時發生錯誤');
+      setError(err instanceof Error ? err.message : '刪除檔案時發生錯誤');
     }
   }
 
+  // 用於下載文件的函數 - 在UI中使用
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function handleDownloadFile(fileUrl: string, fileName: string) {
     try {
       const response = await fetch(fileUrl);
@@ -177,12 +183,14 @@ export default function FileUpload({ userId, userRole, onUploadComplete }: FileU
       
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error downloading file:', err);
-      setError(err.message || '下載檔案時發生錯誤');
+      setError(err instanceof Error ? err.message : '下載檔案時發生錯誤');
     }
   }
 
+  // 用於格式化日期的函數 - 在UI中使用
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function formatDate(dateString: string) {
     const date = new Date(dateString);
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
