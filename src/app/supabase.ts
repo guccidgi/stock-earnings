@@ -184,7 +184,43 @@ export async function checkDatabaseSchema() {
   }
 }
 
-export { supabase };
+// 構建 Edge Function URL 的輔助函數
+export const getEdgeFunctionUrl = (functionName: string): string => {
+  if (!SUPABASE_URL) {
+    throw new Error('Missing Supabase URL environment variable');
+  }
+  
+  // 從 Supabase URL 中提取項目 ID
+  // 例如從 https://xyz.supabase.co 提取 xyz
+  const projectId = SUPABASE_URL.match(/https:\/\/([^\.]+)\./)?.[1];
+  
+  if (!projectId) {
+    throw new Error('Could not extract project ID from Supabase URL');
+  }
+  
+  // 構建 Edge Function URL
+  return `${SUPABASE_URL}/functions/v1/${functionName}`;
+};
+
+// 用於標記連接失敗的狀態
+let connectionFailedFlag = false;
+
+// 標記連接失敗
+export const markConnectionFailed = () => {
+  connectionFailedFlag = true;
+};
+
+// 重置連接失敗標記
+export const resetConnectionFailedFlag = () => {
+  connectionFailedFlag = false;
+};
+
+// 檢查是否連接失敗
+export const hasConnectionFailed = () => {
+  return connectionFailedFlag;
+};
+
+export { supabase, SUPABASE_ANON_KEY };
 
 // Function to check if user exists in profiles table and create if not
 export async function ensureProfile(userId: string, email: string) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
+import { supabase, getEdgeFunctionUrl, SUPABASE_ANON_KEY, resetConnectionFailedFlag, markConnectionFailed } from '../supabase';
 import { ChatSession, ChatMessage, N8nChatHistory } from '../types';
 import ChatSidebar from './ChatSidebar';
 import ChatInterface from './ChatInterface';
@@ -799,63 +799,99 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
       setIsLoading(true);
       setError(null);
       
-      // 發送到 n8n webhook
-      log('正在發送消息到 n8n webhook...', 'info');
+      // 發送到 Supabase Edge Function
+      log('正在發送消息到 Supabase Edge Function...', 'info');
       log(`請求數據: session_id=${sessionId}, question=${content}`, 'info');
       
-      const response = await fetch('https://n8n.guccidgi.com/webhook/f8fd19bb-50cb-4d96-ac06-0f4d7b5221a2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': process.env.NEXT_PUBLIC_N8N_AUTH_TOKEN || '',
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          question: content,
-        }),
-      });
-      
-      log(`響應狀態碼: ${response.status}`, 'info');
-      if (!response.ok) {
-        log(`HTTP 錯誤! 狀態碼: ${response.status}`, 'error');
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // 確保 SUPABASE_ANON_KEY 存在
+      if (!SUPABASE_ANON_KEY) {
+        throw new Error('Missing Supabase Anon Key. Please check your environment variables.');
       }
       
-      // 嘗試解析響應，但處理可能的非 JSON 格式響應
-      let data;
+      // 獲取 Edge Function URL
+      const url = getEdgeFunctionUrl('n8n-webhook');
+      log(`嘗試調用 Edge Function: ${url}`, 'info');
+      log(`使用 Authorization Bearer token: ${SUPABASE_ANON_KEY.substring(0, 10)}...`, 'info');
+      
+      // 構建請求負載
+      const payload = {
+        question: content, // 將問題內容作為 name 參數傳遞
+        session_id: sessionId,
+      };
+      
+      log(`請求負載: ${JSON.stringify(payload)}`, 'info');
+      
       try {
-        // 先檢查響應的 Content-Type
-        const contentType = response.headers.get('Content-Type') || '';
-        log(`響應 Content-Type: ${contentType}`, 'info');
-        
-        // 輸出所有響應頭信息
-        const headers: Record<string, string> = {};
-        response.headers.forEach((value, name) => {
-          headers[name] = value;
-          log(`響應頭: ${name} = ${value}`, 'info');
+        // 發送請求到 Edge Function
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            // 添加 CORS 頭部
+            'Origin': typeof window !== 'undefined' ? window.location.origin : ''
+          },
+          body: JSON.stringify(payload),
         });
         
-        if (contentType.includes('application/json')) {
-          // 如果是 JSON 格式，用 json() 解析
-          data = await response.json();
-          log(`響應數據 (JSON): ${JSON.stringify(data)}`, 'info');
-        } else {
-          // 如果不是 JSON，只讀取文本
-          const text = await response.text();
-          log(`響應數據 (Text): ${text}`, 'info');
-          // 希望 n8n 已經處理了請求，即使這不是 JSON
-          data = { text }; // 將文本轉換為簡單的對象
+        // 重置連接失敗標記，因為我們成功連接了
+        resetConnectionFailedFlag();
+      
+        log(`響應狀態碼: ${response.status}`, 'info');
+        if (!response.ok) {
+          log(`HTTP 錯誤! 狀態碼: ${response.status}`, 'error');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      } catch (parseError: unknown) {
-        const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
-        log(`解析響應錯誤: ${errorMessage}`, 'error');
-        // 即使解析失敗，我們仍然假設 n8n 處理了請求
+      
+        // 嘗試解析響應，但處理可能的非 JSON 格式響應
+        let data;
+        try {
+          // 先檢查響應的 Content-Type
+          const contentType = response.headers.get('Content-Type') || '';
+          log(`響應 Content-Type: ${contentType}`, 'info');
+          
+          // 輸出所有響應頭信息
+          const headers: Record<string, string> = {};
+          response.headers.forEach((value, name) => {
+            headers[name] = value;
+            log(`響應頭: ${name} = ${value}`, 'info');
+          });
+          
+          if (contentType.includes('application/json')) {
+            // 如果是 JSON 格式，用 json() 解析
+            data = await response.json();
+            log(`響應數據 (JSON): ${JSON.stringify(data)}`, 'info');
+          } else {
+            // 如果不是 JSON，只讀取文本
+            const text = await response.text();
+            log(`響應數據 (Text): ${text}`, 'info');
+            // 希望 n8n 已經處理了請求，即使這不是 JSON
+            data = { text }; // 將文本轉換為簡單的對象
+          }
+        } catch (parseError: unknown) {
+          const errorMessage = parseError instanceof Error ? parseError.message : String(parseError);
+          log(`解析響應錯誤: ${errorMessage}`, 'error');
+          // 即使解析失敗，我們仍然假設 n8n 處理了請求
+        }
+      } catch (error: any) {
+        log(`調用 Edge Function 錯誤: ${error.message}`, 'error');
+        markConnectionFailed();
+        
+        // 檢查是否為 CORS 問題
+        if (error.message?.includes('CORS') || error.message?.includes('origin')) {
+          log('這可能是 CORS 問題。Supabase Edge Function 可能需要配置 CORS。', 'error');
+          throw new Error(`CORS 問題被檢測到。Supabase Edge Function 需要允許來自 ${typeof window !== 'undefined' ? window.location.origin : ''} 的請求。錯誤: ${error.message}`);
+        }
+        
+        // 重新拋出一個更有幫助的錯誤訊息
+        throw new Error(`無法連接到 Supabase Edge Function。請檢查您的連接和 Supabase 配置。錯誤: ${error.message}`);
       }
       
-      // n8n webhook 處理了消息存儲，所以我們需要重新獲取這個會話的消息
-      // 添加延遲，確保 n8n 有足夠時間處理消息
+      // Supabase Edge Function 處理了消息存儲，所以我們需要重新獲取這個會話的消息
+      // 添加延遲，確保 Edge Function 有足夠時間處理消息
       log('==========================================', 'info');
-      log('等待 n8n 處理消息...', 'info');
+      log('等待 Edge Function 處理消息...', 'info');
       log('session_id: ' + sessionId, 'info');
       log('==========================================', 'info');
       
