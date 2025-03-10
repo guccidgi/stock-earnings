@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stock-earnings-app
+    restart: always
+    environment:
+      - NODE_ENV=production
+      # u74b0u5883u8b8au6578u5c07u5f9e .env u6587u4ef6u52a0u8f09
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: stock-earnings-caddy
+    restart: always
+    ports:
+      - "8098:8098"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - nextjs
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
