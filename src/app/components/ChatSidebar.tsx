@@ -150,15 +150,21 @@ export default function ChatSidebar({
           加載中...
         </div>
       )}
-      <div className="sidebar-footer">
+      <div className="sidebar-footer p-4">
         <Button 
           variant="outline" 
-          className="sign-out-btn" 
+          className={cn(
+            "sign-out-btn w-full",
+            "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200",
+            "relative overflow-hidden group transition-all duration-300"
+          )}
           onClick={handleSignOut}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <LogOut className="h-4 w-4 mr-2" style={{ marginTop: '1px'}} />
-          <span>Sign Out</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-300 to-slate-400 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
+          <div className="relative flex items-center justify-center gap-2">
+            <LogOut className="h-4 w-4" />
+            <span>Sign Out</span>
+          </div>
         </Button>
       </div>
     </div>

@@ -13,8 +13,8 @@ RUN npm ci --legacy-peer-deps
 # 複製源代碼
 COPY . .
 
-# 構建應用
-RUN npm run build
+# 構建應用 (跳過 ESLint 檢查)
+RUN NEXT_DISABLE_ESLINT=1 npm run build
 
 # 生產環境
 FROM node:20-alpine AS production

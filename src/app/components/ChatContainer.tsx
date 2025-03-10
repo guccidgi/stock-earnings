@@ -4,6 +4,8 @@ import { ChatSession, ChatMessage, N8nChatHistory } from '../types';
 import ChatSidebar from './ChatSidebar';
 import ChatInterface from './ChatInterface';
 import { FileInfo } from '../types';
+import { useLogger } from '../../hooks/useLogger';
+import { DebugPanel } from '../../components/DebugPanel';
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,18 +31,8 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 添加調試日誌狀態
-  const enableLogs = process.env.NEXT_PUBLIC_ENABLE_LOGS === 'true';
-  const [logs, setLogs] = useState<{message: string, type: string}[]>([]);
-  const [showLogs, setShowLogs] = useState<boolean>(false);
-
-  // 添加自定義日誌函數
-  const log = (message: string, type: 'info' | 'warn' | 'error' = 'info') => {
-    if (enableLogs) {
-      console.log(`[${type}] ${message}`); // 保留控制台輸出
-      setLogs(prev => [...prev, {message, type}].slice(-50)); // 保留最新的50條日誌
-    }
-  };
+  // 使用新的日誌系統 hook
+  const { log } = useLogger();
 
   // 獲取當前用戶 ID
   useEffect(() => {
@@ -1095,49 +1087,10 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
   return (
     <div className="page-container">
       <div className="chat-container">
-        {/* 調試面板控制 */}
-        {enableLogs && (
-          <div className="debug-controls">
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={() => setShowLogs(!showLogs)}
-              className="debug-btn"
-            >
-              {showLogs ? <EyeOff className="debug-icon" /> : <Eye className="debug-icon" />}
-              <span className="debug-text">{showLogs ? '隱藏日誌' : '顯示日誌'}</span>
-            </Button>
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={() => setLogs([])} 
-              className="debug-btn"
-            >
-              <Trash2 className="debug-icon" />
-              <span className="debug-text">清空日誌</span>
-            </Button>
-          </div>
-        )}
+        {/* 使用新的 DebugPanel 組件 */}
+        <DebugPanel />
         
-        {/* 調試日誌顯示區域 */}
-        {enableLogs && showLogs && (
-          <ScrollArea className="logs-panel">
-            <div className="logs-content">
-              {logs.length === 0 ? (
-                <div className="empty-logs">無日誌記錄</div>
-              ) : (
-                logs.map((item, i) => (
-                  <div 
-                    key={i} 
-                    className={`log-entry ${item.type === 'error' ? 'log-error' : item.type === 'warn' ? 'log-warning' : 'log-info'}`}
-                  >
-                    [{new Date().toLocaleTimeString()}] {item.message}
-                  </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        )}
+        {/* 舊的調試面板控制及日誌顯示區域已刪除 */}
         
         <div className="chat-layout" style={{ width: '100%', display: 'flex' }}>
           {/* 左側聊天會話列表 */}
