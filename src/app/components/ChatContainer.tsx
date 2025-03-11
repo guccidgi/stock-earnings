@@ -350,17 +350,70 @@ export default function ChatContainer({ userId, initialSessionId, files }: ChatC
               let uniqueId = `${sessionId}_${record.id}_${index}`;
               
               // 嘗試解析並提取消息內容
+              // 用於從 human 內容中提取實際問題的函數
+              const extractUserQuestion = (content: string): string => {
+                try {
+                  log(`嘗試從內容中提取用戶問題: ${content.substring(0, 100)}...`, 'info');
+                  
+                  // 直接通過尋找特定字符串來提取，適用於您提供的格式
+                  const exactPattern = /Use tools to fetch vector store for user's question as below:\s*([^\n#]+)/i;
+                  const exactMatch = content.match(exactPattern);
+                  
+                  if (exactMatch && exactMatch[1]) {
+                    const extractedQuery = exactMatch[1].trim();
+                    log(`使用精確模式成功提取用戶問題: ${extractedQuery}`, 'info');
+                    return extractedQuery;
+                  }
+
+                  // 第二種嘗試：尋找 "question as below:" 後面的內容
+                  const questionPattern = /question as below:\s*([^\n#]+)/i;
+                  const questionMatch = content.match(questionPattern);
+                  
+                  if (questionMatch && questionMatch[1]) {
+                    const extractedQuery = questionMatch[1].trim();
+                    log(`使用標準模式提取用戶問題: ${extractedQuery}`, 'info');
+                    return extractedQuery;
+                  }
+                  
+                  // 第三種嘗試：嘗試在內容中尋找冒號後的第一個完整短句
+                  const colonPattern = /:\s*([^\n#.!?]+[.!?]?)/i;
+                  const colonMatch = content.match(colonPattern);
+                  
+                  if (colonMatch && colonMatch[1]) {
+                    const extractedQuery = colonMatch[1].trim();
+                    log(`使用冒號後內容提取用戶問題: ${extractedQuery}`, 'info');
+                    return extractedQuery;
+                  }
+                  
+                  log('無法從內容中提取用戶問題，使用原始內容', 'warn');
+                  return content;
+                } catch (err) {
+                  log(`提取用戶問題時出錯: ${err}`, 'error');
+                  return content;
+                }
+              };
+
               if (record.message) {
                 if (typeof record.message === 'object') {
                   const msgObj = record.message;
-                  msgContent = msgObj.content || '';
+                  // 處理 human 類型消息，只提取實際問題
+                  if (msgObj.type === 'human') {
+                    msgContent = extractUserQuestion(msgObj.content || '');
+                  } else {
+                    msgContent = msgObj.content || '';
+                  }
                   // 根據 n8n 的診斷記錄，將 'human' 類型轉換為 'user' 角色
                   msgRole = msgObj.type === 'human' ? 'user' : 'assistant';
                   log(`Object message type: ${msgObj.type}, converted role: ${msgRole}`, 'info');
                 } else if (typeof record.message === 'string') {
                   try {
                     const parsedMsg = JSON.parse(record.message);
-                    msgContent = parsedMsg.content || '';
+                    // 處理 human 類型消息，只提取實際問題
+                    if (parsedMsg.type === 'human') {
+                      msgContent = extractUserQuestion(parsedMsg.content || '');
+                    } else {
+                      msgContent = parsedMsg.content || '';
+                    }
                     // 同樣將 'human' 類型轉換為 'user' 角色
                     msgRole = parsedMsg.type === 'human' ? 'user' : 'assistant';
                     log(`String message type: ${parsedMsg.type}, converted role: ${msgRole}`, 'info');
