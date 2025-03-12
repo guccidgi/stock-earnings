@@ -15,6 +15,7 @@ const buttonVariants = cva(
         secondary: "hover:opacity-80",
         ghost: "hover:opacity-80",
         link: "underline-offset-4 hover:underline",
+        orange: "text-white hover:opacity-90",
       },
       size: {
         default: "",
@@ -82,6 +83,14 @@ function Button({
         boxShadow: 'none',
         padding: 0,
         height: 'auto'
+      },
+      orange: {
+        backgroundColor: '#F97316',
+        color: 'white',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'all 0.3s'
       }
     };
     

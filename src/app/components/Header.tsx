@@ -1,5 +1,8 @@
 import React from 'react';
 import { supabase } from '../supabase';
+import { LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 type HeaderProps = {
   userEmail: string | null;
@@ -32,18 +35,21 @@ export default function Header({ userEmail, onSignOut, onChatWithFiles, showingC
             {onChatWithFiles && (
               <button
                 onClick={onChatWithFiles}
-                className="btn btn-primary"
+                className="btn btn-primary whitespace-nowrap"
+                style={{ minWidth: 'fit-content' }}
               >
                 {showingChat ? 'Manage Files' : 'Chat with Files'}
               </button>
             )}
             
-            <button
+            <Button 
+              variant="outline" 
+              className="sign-out-btn whitespace-nowrap"
               onClick={handleSignOut}
-              className="btn btn-link"
             >
-              Sign Out
-            </button>
+              <LogOut className="h-4 w-4 mr-1" />
+              <span style={{ position: 'relative', top: '-7px' }}>Sign Out</span>
+            </Button>
           </div>
         )}
       </div>

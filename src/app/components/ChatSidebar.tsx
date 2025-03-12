@@ -159,10 +159,10 @@ export default function ChatSidebar({
           )}
           onClick={handleSignOut}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-300 to-slate-400 opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
-          <div className="relative flex items-center justify-center gap-2">
-            <LogOut className="h-4 w-4" />
-            <span>Sign Out</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-indigo-400 opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
+          <div className="relative flex items-center justify-center gap-2 z-10 transform group-hover:scale-105 transition-transform duration-300">
+            <LogOut className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-blue-600" />
+            <span className="text-center transition-colors duration-300 group-hover:text-blue-600" style={{ position: 'relative', top: '-7px' }}>Sign Out</span>
           </div>
         </Button>
       </div>

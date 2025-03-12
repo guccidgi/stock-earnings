@@ -174,7 +174,8 @@ export default function ChatInterface({
               type="submit"
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="send-button"
+              className="send-button hover-effect-btn"
+              variant="orange"
             >
               {isLoading ? <Loader2 className="send-icon spin" /> : <Send className="send-icon" />}
             </Button>
