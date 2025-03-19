@@ -7,13 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: stock-earnings-app
     restart: always
-    environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=
-      - NEXT_PUBLIC_N8N_WEBHOOK_URL=ac06-0f4d7b5221a2
-      - NEXT_PUBLIC_N8N_AUTH_TOKEN=
-      - NEXT_PUBLIC_ENABLE_LOGS=false
+    env_file:
+      - .env
       
       #ports:
       #- "8098:8098"
