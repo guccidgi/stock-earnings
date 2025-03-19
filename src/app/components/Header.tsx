@@ -2,7 +2,6 @@ import React from 'react';
 import { supabase } from '../supabase';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 type HeaderProps = {
   userEmail: string | null;
